@@ -8,6 +8,7 @@
 </head>
 <body>
   <div class="app">
+
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="brand">🎓 Uni&nbsp;Tracker</div>
@@ -29,9 +30,50 @@
     <main class="main">
       <section id="notes">
         <h2>Notes</h2>
-        <div class="note-placeholder">Your notes will appear here...</div>
+        <div class="note-placeholder">Your course notes will appear here...</div>
       </section>
     </main>
+
   </div>
+
+  <!-- ========== Modal Popup for Adding Course ========== -->
+  <div class="modal-overlay hidden" id="note-modal">
+    <div class="modal">
+      <h2>Add course</h2>
+
+      <form id="note-form">
+
+        <div class="field">
+          <span>Course name</span>
+          <input
+            type="text"
+            id="course-name"
+            placeholder="e.g. COMP3121"
+            required
+          />
+        </div>
+
+        <div class="field">
+          <span>Include sections</span>
+          <div class="option-toggle-group">
+            <button type="button" class="option-toggle active" data-section="lectures">✓ Lectures</button>
+            <button type="button" class="option-toggle active" data-section="tutorials">✓ Tutorials</button>
+            <button type="button" class="option-toggle" data-section="seminars">✕ Seminars</button>
+          </div>
+          <small class="field-help">
+            Click to toggle. ✓ = include, ✕ = exclude.
+          </small>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="cancel-modal">Cancel</button>
+          <button type="submit" class="btn-primary">Add course</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
 </body>
 </html>
