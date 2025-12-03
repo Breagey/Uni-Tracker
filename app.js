@@ -6,7 +6,7 @@ const modal = document.getElementById('note-modal');
 const cancelBtn = document.getElementById('cancel-modal');
 const noteForm = document.getElementById('note-form');
 const courseNameInput = document.getElementById('course-name');
-const notesSection = document.getElementById('notes');
+const notesGrid = document.querySelector('.notes-grid'); // container for cards
 const optionButtons = document.querySelectorAll('.option-toggle');
 
 
@@ -92,7 +92,7 @@ function createCourseCard(courseName, sections) {
     h3.textContent = titles[key];
     sectionDiv.appendChild(h3);
 
-    const todoRow = document.createElement('label');
+    const todoRow = document.createElement('div');   // div, not label
     todoRow.className = 'todo-row';
 
     const checkbox = document.createElement('input');
@@ -106,6 +106,15 @@ function createCourseCard(courseName, sections) {
       `Type ${titles[key].toLowerCase()} details or tasks here…`
     );
 
+    // When checkbox is ticked, grey out + strike text
+    checkbox.addEventListener('change', () => {
+      if (checkbox.checked) {
+        editable.classList.add('done');
+      } else {
+        editable.classList.remove('done');
+      }
+    });
+
     todoRow.appendChild(checkbox);
     todoRow.appendChild(editable);
     sectionDiv.appendChild(todoRow);
@@ -113,10 +122,12 @@ function createCourseCard(courseName, sections) {
     body.appendChild(sectionDiv);
   });
 
-  const placeholder = notesSection.querySelector('.note-placeholder');
+  // Remove placeholder if it exists
+  const placeholder = notesGrid.querySelector('.note-placeholder');
   if (placeholder) placeholder.remove();
 
-  notesSection.appendChild(card);
+  // Add card to grid
+  notesGrid.appendChild(card);
 }
 
 

@@ -111,6 +111,34 @@ h2 {
   margin-top: 0;
 }
 
+/* Notes grid to allow up to 3 cards per row */
+.notes-grid {
+  margin-top: 10px;
+  display: grid;
+  gap: 16px;
+}
+
+/* 1 card per row on small screens */
+@media (max-width: 699px) {
+  .notes-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 2 cards per row on medium screens */
+@media (min-width: 700px) and (max-width: 1023px) {
+  .notes-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* 3 cards per row on large screens */
+@media (min-width: 1024px) {
+  .notes-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 .note-placeholder {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -121,15 +149,15 @@ h2 {
 }
 
 /* =====================================================
-   COURSE NOTE CARDS
+   COURSE NOTE CARDS (VERTICAL CONTENT)
 ===================================================== */
 .course-note {
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 16px 18px;
-  margin-top: 16px;
   box-shadow: 0 10px 20px rgba(15, 23, 42, 0.06);
+  width: 100%;
 }
 
 .course-note-header {
@@ -140,12 +168,8 @@ h2 {
 
 .course-note-body {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px 20px;
-}
-
-.course-section {
-  min-width: 150px;
+  flex-direction: column; /* vertical stacking for sections */
+  gap: 10px;
 }
 
 .course-section h3 {
@@ -153,10 +177,58 @@ h2 {
   font-size: 0.9rem;
 }
 
-.course-section p {
-  margin: 0;
-  font-size: 0.85rem;
-  color: #6b7280;
+/* =====================================================
+   EDITABLE TODO ROW INSIDE SECTIONS
+===================================================== */
+.todo-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+}
+
+.todo-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.todo-text {
+  flex: 1;
+  min-height: 20px;
+  font-size: 0.88rem;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  outline: none;
+  display: inline-block;
+}
+
+/* editable behaviour */
+.todo-text[contenteditable="true"] {
+  cursor: text;
+}
+
+.todo-text[contenteditable="true"]:hover {
+  border-color: var(--border);
+}
+
+.todo-text[contenteditable="true"]:focus {
+  border-color: var(--accent);
+  background: #eff6ff;
+}
+
+/* Placeholder when empty */
+.todo-text[contenteditable="true"]:empty:before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+/* When task is completed (checkbox ticked) */
+.todo-text.done {
+  color: #9ca3af;
+  text-decoration: line-through;
 }
 
 /* =====================================================
@@ -258,7 +330,7 @@ h2 {
 }
 
 /* =====================================================
-   RESPONSIVE
+   RESPONSIVE LAYOUT
 ===================================================== */
 @media (max-width: 700px) {
   .app {
@@ -279,9 +351,5 @@ h2 {
 
   .brand {
     display: none;
-  }
-
-  .course-note-body {
-    flex-direction: column;
   }
 }
