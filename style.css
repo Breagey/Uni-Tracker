@@ -1,0 +1,151 @@
+/* ========== Base Styles ========== */
+:root {
+  --bg: #f6f7fb;
+  --panel: #ffffff;
+  --accent: #3b82f6;
+  --ink: #1f2937;
+  --border: #e5e7eb;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  height: 100vh;
+}
+
+/* ========== Layout ========== */
+.app {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  grid-template-rows: 60px 1fr;
+  grid-template-areas:
+    "sidebar header"
+    "sidebar main";
+  height: 100%;
+}
+
+/* ========== Sidebar ========== */
+.sidebar {
+  grid-area: sidebar;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  padding: 20px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-left: 10px;
+}
+
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Sidebar Buttons (pill shape + hover color) */
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--ink);
+  background: #f9fafb;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 500;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.nav-link:hover {
+  background: #e5e7eb;
+  transform: translateY(1px);
+}
+
+.nav-link.active {
+  background: #eff6ff;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ========== Header ========== */
+.header {
+  grid-area: header;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.add-note {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.add-note:hover {
+  background: #2563eb;
+}
+
+.add-note:active {
+  transform: translateY(1px);
+}
+
+/* ========== Main Content ========== */
+.main {
+  grid-area: main;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+h2 {
+  margin-top: 0;
+}
+
+.note-placeholder {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  color: #6b7280;
+  text-align: center;
+}
+
+/* ========== Responsive ========== */
+@media (max-width: 700px) {
+  .app {
+    grid-template-columns: 1fr;
+    grid-template-rows: 60px auto 1fr;
+    grid-template-areas:
+      "header"
+      "sidebar"
+      "main";
+  }
+
+  .sidebar {
+    flex-direction: row;
+    justify-content: space-around;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .brand {
+    display: none;
+  }
+}
