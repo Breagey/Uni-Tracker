@@ -149,7 +149,7 @@ h2 {
 }
 
 /* =====================================================
-   COURSE NOTE CARDS (VERTICAL CONTENT)
+   COURSE NOTE CARDS
 ===================================================== */
 .course-note {
   background: var(--panel);
@@ -168,7 +168,7 @@ h2 {
 
 .course-note-body {
   display: flex;
-  flex-direction: column; /* vertical stacking for sections */
+  flex-direction: column;
   gap: 10px;
 }
 
@@ -178,13 +178,17 @@ h2 {
 }
 
 /* =====================================================
-   EDITABLE TODO ROW INSIDE SECTIONS
+   SESSION ROWS ON CARD
 ===================================================== */
 .todo-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   padding: 6px 0;
+}
+
+.session-row {
+  flex-wrap: wrap;
 }
 
 .todo-row input[type="checkbox"] {
@@ -193,6 +197,62 @@ h2 {
   cursor: pointer;
 }
 
+.session-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Time pill + edit mode wrapper */
+.session-time-wrapper {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Display pill (no arrows) */
+.session-time-pill {
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #f9fafb;
+  padding: 2px 10px;
+  font-size: 0.78rem;
+  color: #374151;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Edit box with dropdowns (hidden by default) */
+.session-time-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+}
+
+.session-time-edit select {
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  font-size: 0.78rem;
+  background: #fff;
+}
+
+.session-time-done {
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #f9fafb;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.session-time-done:hover {
+  background: #eff6ff;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Editable text */
 .todo-text {
   flex: 1;
   min-height: 20px;
@@ -204,7 +264,6 @@ h2 {
   display: inline-block;
 }
 
-/* editable behaviour */
 .todo-text[contenteditable="true"] {
   cursor: text;
 }
@@ -229,6 +288,24 @@ h2 {
 .todo-text.done {
   color: #9ca3af;
   text-decoration: line-through;
+}
+
+/* Add-time button */
+.add-session-btn {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  border-radius: 999px;
+  border: 1px dashed var(--border);
+  background: #f9fafb;
+  padding: 2px 8px;
+  cursor: pointer;
+  color: #4b5563;
+}
+
+.add-session-btn:hover {
+  background: #eff6ff;
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* =====================================================
@@ -283,18 +360,29 @@ h2 {
   color: #9ca3af;
 }
 
+/* Group that holds each section row (button + day + time) */
 .option-toggle-group {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 8px;
 }
 
+/* One row per section in the modal */
+.section-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+/* Toggle pill */
 .option-toggle {
   border-radius: 999px;
   padding: 6px 12px;
   border: 1px solid var(--border);
   background: #f9fafb;
   cursor: pointer;
+  font-size: 0.85rem;
 }
 
 .option-toggle.active {
@@ -303,6 +391,47 @@ h2 {
   color: var(--accent);
 }
 
+/* Day + time controls in modal */
+.section-schedule {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: #4b5563;
+}
+
+.section-schedule.disabled {
+  opacity: 0.5;
+}
+
+.section-schedule label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.section-schedule select {
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  font-size: 0.8rem;
+  background: #fff;
+}
+
+/* Time dropdown pair in modal */
+.time-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.time-select-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Modal buttons */
 .modal-actions {
   margin-top: 16px;
   display: flex;

@@ -15,7 +15,6 @@
       <nav>
         <a class="nav-link active" href="#notes">💡 Notes</a>
         <a class="nav-link" href="#reminders">🔔 Reminders</a>
-        <a class="nav-link" href="#labels">✏️ Edit labels</a>
         <a class="nav-link" href="#archive">📁 Archive</a>
         <a class="nav-link" href="#trash">🗑️ Trash</a>
       </nav>
@@ -57,13 +56,125 @@
 
         <div class="field">
           <span>Include sections</span>
+
           <div class="option-toggle-group">
-            <button type="button" class="option-toggle active" data-section="lectures">✓ Lectures</button>
-            <button type="button" class="option-toggle active" data-section="tutorials">✓ Tutorials</button>
-            <button type="button" class="option-toggle" data-section="seminars">✕ Seminars</button>
+            <!-- Lectures row -->
+            <div class="section-row" data-section="lectures">
+              <button
+                type="button"
+                class="option-toggle active"
+                data-section="lectures"
+              >
+                ✓ Lectures
+              </button>
+              <div class="section-schedule">
+                <label>
+                  Day
+                  <select class="day-select">
+                    <option value="">—</option>
+                    <option>Mon</option>
+                    <option>Tue</option>
+                    <option>Wed</option>
+                    <option>Thu</option>
+                    <option>Fri</option>
+                    <option>Sat</option>
+                    <option>Sun</option>
+                  </select>
+                </label>
+                <label class="time-label">
+                  Time
+                  <div class="time-select-group">
+                    <select class="hour-select">
+                      <option value="">HH</option>
+                    </select>
+                    :
+                    <select class="minute-select">
+                      <option value="">MM</option>
+                    </select>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Tutorials row -->
+            <div class="section-row" data-section="tutorials">
+              <button
+                type="button"
+                class="option-toggle active"
+                data-section="tutorials"
+              >
+                ✓ Tutorials
+              </button>
+              <div class="section-schedule">
+                <label>
+                  Day
+                  <select class="day-select">
+                    <option value="">—</option>
+                    <option>Mon</option>
+                    <option>Tue</option>
+                    <option>Wed</option>
+                    <option>Thu</option>
+                    <option>Fri</option>
+                    <option>Sat</option>
+                    <option>Sun</option>
+                  </select>
+                </label>
+                <label class="time-label">
+                  Time
+                  <div class="time-select-group">
+                    <select class="hour-select">
+                      <option value="">HH</option>
+                    </select>
+                    :
+                    <select class="minute-select">
+                      <option value="">MM</option>
+                    </select>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Seminars row -->
+            <div class="section-row" data-section="seminars">
+              <button
+                type="button"
+                class="option-toggle"
+                data-section="seminars"
+              >
+                ✕ Seminars
+              </button>
+              <div class="section-schedule">
+                <label>
+                  Day
+                  <select class="day-select">
+                    <option value="">—</option>
+                    <option>Mon</option>
+                    <option>Tue</option>
+                    <option>Wed</option>
+                    <option>Thu</option>
+                    <option>Fri</option>
+                    <option>Sat</option>
+                    <option>Sun</option>
+                  </select>
+                </label>
+                <label class="time-label">
+                  Time
+                  <div class="time-select-group">
+                    <select class="hour-select">
+                      <option value="">HH</option>
+                    </select>
+                    :
+                    <select class="minute-select">
+                      <option value="">MM</option>
+                    </select>
+                  </div>
+                </label>
+              </div>
+            </div>
           </div>
+
           <small class="field-help">
-            Click to toggle. ✓ = include, ✕ = exclude.
+            Click the pill to toggle. ✓ = include, ✕ = exclude. Day + time are optional (24-hour).
           </small>
         </div>
 
