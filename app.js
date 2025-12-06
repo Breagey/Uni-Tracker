@@ -1,22 +1,93 @@
 /* =====================================================
-   ELEMENTS
+   VIEW + BASIC ELEMENTS
 ===================================================== */
-const addNoteBtn = document.querySelector('.add-note');
-const modal = document.getElementById('note-modal');
-const cancelBtn = document.getElementById('cancel-modal');
-const noteForm = document.getElementById('note-form');
-const courseNameInput = document.getElementById('course-name');
+const currentView = document.body.dataset.view || 'notes';
 const notesGrid = document.querySelector('.notes-grid');
+const addNoteBtn = document.querySelector('.add-note');
+
+const modal = document.getElementById('note-modal') || null;
+const noteForm = document.getElementById('note-form') || null;
+const cancelBtn = document.getElementById('cancel-modal') || null;
+const courseNameInput = document.getElementById('course-name') || null;
+
 const optionButtons = document.querySelectorAll('.option-toggle');
 const sectionRows = document.querySelectorAll('.section-row');
 const hourSelects = document.querySelectorAll('.hour-select');
 const minuteSelects = document.querySelectorAll('.minute-select');
 
+const STORAGE_KEY = 'uniTrackerNotes';
 
 /* =====================================================
-   BUILD OPTIONS (24H HOURS + 00–59 MINUTES)
+   STORAGE HELPERS
+===================================================== */
+function loadAllNotes() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    console.error('Error loading notes:', e);
+    return [];
+  }
+}
+
+function saveAllNotes(notes) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+}
+
+function addNote(note) {
+  const notes = loadAllNotes();
+  notes.push(note);
+  saveAllNotes(notes);
+}
+
+function updateNoteStatus(id, newStatus) {
+  const notes = loadAllNotes();
+  const idx = notes.findIndex((n) => n.id === id);
+  if (idx !== -1) {
+    notes[idx].status = newStatus;
+    saveAllNotes(notes);
+  }
+}
+
+function deleteNoteById(id) {
+  let notes = loadAllNotes();
+  notes = notes.filter((n) => n.id !== id);
+  saveAllNotes(notes);
+}
+
+/* =====================================================
+   PLACEHOLDER HANDLING
+===================================================== */
+function getPlaceholderText() {
+  if (currentView === 'archive') return 'Archived notes will appear here...';
+  if (currentView === 'trash') return 'Deleted notes will appear here...';
+  return 'Your course notes will appear here...';
+}
+
+function ensurePlaceholder() {
+  if (!notesGrid) return;
+  let ph = notesGrid.querySelector('.note-placeholder');
+  if (!ph) {
+    ph = document.createElement('div');
+    ph.className = 'note-placeholder';
+    ph.textContent = getPlaceholderText();
+    notesGrid.appendChild(ph);
+  }
+}
+
+function removePlaceholder() {
+  if (!notesGrid) return;
+  const ph = notesGrid.querySelector('.note-placeholder');
+  if (ph) ph.remove();
+}
+
+/* =====================================================
+   SELECT BUILDERS (HOURS / MINUTES / DAYS)
 ===================================================== */
 function buildHourOptions(selectEl) {
+  if (!selectEl) return;
   selectEl.innerHTML = '<option value="">HH</option>';
   for (let h = 0; h < 24; h++) {
     const hh = String(h).padStart(2, '0');
@@ -28,6 +99,7 @@ function buildHourOptions(selectEl) {
 }
 
 function buildMinuteOptions(selectEl) {
+  if (!selectEl) return;
   selectEl.innerHTML = '<option value="">MM</option>';
   for (let m = 0; m < 60; m++) {
     const mm = String(m).padStart(2, '0');
@@ -38,36 +110,57 @@ function buildMinuteOptions(selectEl) {
   }
 }
 
-// Initialize modal hour/minute dropdowns
+function buildDayOptions(selectEl) {
+  if (!selectEl) return;
+  selectEl.innerHTML = '<option value="">—</option>';
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  days.forEach((d) => {
+    const opt = document.createElement('option');
+    opt.value = d;
+    opt.textContent = d;
+    selectEl.appendChild(opt);
+  });
+}
+
+/* Only the Notes page has these modal hour/minute selects */
 hourSelects.forEach(buildHourOptions);
 minuteSelects.forEach(buildMinuteOptions);
 
-
 /* =====================================================
-   OPEN / CLOSE MODAL
+   MODAL OPEN/CLOSE (NOTES PAGE ONLY)
 ===================================================== */
 function openModal() {
+  if (!modal) return;
   modal.classList.remove('hidden');
-  courseNameInput.value = '';
+  if (courseNameInput) {
+    courseNameInput.value = '';
+    courseNameInput.focus();
+  }
   resetOptionButtons();
-  courseNameInput.focus();
 }
 
 function closeModal() {
+  if (!modal) return;
   modal.classList.add('hidden');
 }
 
-addNoteBtn.addEventListener('click', openModal);
-cancelBtn.addEventListener('click', closeModal);
-
-// Close when clicking outside modal
-modal.addEventListener('click', (e) => {
-  if (e.target === modal) closeModal();
-});
-
+if (
+  currentView === 'notes' &&
+  addNoteBtn &&
+  modal &&
+  noteForm &&
+  courseNameInput &&
+  cancelBtn
+) {
+  addNoteBtn.addEventListener('click', openModal);
+  cancelBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+}
 
 /* =====================================================
-   OPTION TOGGLE BUTTONS (✓ / ✕) + SCHEDULE ENABLE/DISABLE
+   MODAL SECTION TOGGLES (NOTES PAGE ONLY)
 ===================================================== */
 function updateOptionButtonText(btn) {
   const name = btn.dataset.section;
@@ -78,10 +171,8 @@ function updateOptionButtonText(btn) {
 function setScheduleEnabledForButton(btn) {
   const row = btn.closest('.section-row');
   if (!row) return;
-
   const schedule = row.querySelector('.section-schedule');
   if (!schedule) return;
-
   const enabled = btn.classList.contains('active');
   const inputs = schedule.querySelectorAll('select');
 
@@ -100,14 +191,12 @@ function resetOptionButtons() {
     const schedule = row.querySelector('.section-schedule');
     const selects = schedule.querySelectorAll('select');
 
-    // default: lectures + tutorials included, seminars excluded
     if (btn.dataset.section === 'seminars') {
       btn.classList.remove('active');
     } else {
       btn.classList.add('active');
     }
 
-    // Reset day/hour/minute in modal
     selects.forEach((sel) => {
       sel.value = '';
     });
@@ -117,55 +206,36 @@ function resetOptionButtons() {
   });
 }
 
-// Initial setup for option buttons
-optionButtons.forEach((btn) => {
-  updateOptionButtonText(btn);
-  setScheduleEnabledForButton(btn);
-
-  btn.addEventListener('click', () => {
-    btn.classList.toggle('active');
+/* Only run toggles setup if we're on the notes page (where the modal exists) */
+if (currentView === 'notes') {
+  optionButtons.forEach((btn) => {
     updateOptionButtonText(btn);
     setScheduleEnabledForButton(btn);
-  });
-});
-
-
-/* =====================================================
-   HELPERS FOR CARD SESSIONS
-===================================================== */
-function buildDayOptions(selectEl) {
-  selectEl.innerHTML = '<option value="">—</option>';
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  days.forEach((d) => {
-    const opt = document.createElement('option');
-    opt.value = d;
-    opt.textContent = d;
-    selectEl.appendChild(opt);
+    btn.addEventListener('click', () => {
+      btn.classList.toggle('active');
+      updateOptionButtonText(btn);
+      setScheduleEnabledForButton(btn);
+    });
   });
 }
 
-/**
- * Adds a session row to a section on the card:
- * [checkbox] [pill with day/time] [editable text]
- */
+/* =====================================================
+   SESSION ROWS ON CARDS
+===================================================== */
 function addSessionRow(container, sectionTitle, initialDay = '', initialTime = '') {
   const row = document.createElement('div');
   row.className = 'todo-row session-row';
 
-  // Checkbox
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
 
-  // Time wrapper
   const timeWrapper = document.createElement('div');
   timeWrapper.className = 'session-time-wrapper';
 
-  // Pill (display mode)
   const pill = document.createElement('button');
   pill.type = 'button';
   pill.className = 'session-time-pill';
 
-  // Edit box (hidden by default)
   const editBox = document.createElement('div');
   editBox.className = 'session-time-edit hidden';
 
@@ -188,7 +258,6 @@ function addSessionRow(container, sectionTitle, initialDay = '', initialTime = '
   doneBtn.className = 'session-time-done';
   doneBtn.textContent = 'Done';
 
-  // Apply initial values (if any)
   if (initialDay) daySelect.value = initialDay;
   if (initialTime) {
     const [hh, mm] = initialTime.split(':');
@@ -210,10 +279,8 @@ function addSessionRow(container, sectionTitle, initialDay = '', initialTime = '
     }
   }
 
-  // Initial pill text
   updatePillText();
 
-  // Events
   pill.addEventListener('click', () => {
     pill.classList.add('hidden');
     editBox.classList.remove('hidden');
@@ -230,18 +297,15 @@ function addSessionRow(container, sectionTitle, initialDay = '', initialTime = '
     sel.addEventListener('change', updatePillText);
   });
 
-  // Assemble edit box
   editBox.appendChild(daySelect);
   editBox.appendChild(hourSelect);
   editBox.appendChild(colon);
   editBox.appendChild(minuteSelect);
   editBox.appendChild(doneBtn);
 
-  // Assemble time wrapper
   timeWrapper.appendChild(pill);
   timeWrapper.appendChild(editBox);
 
-  // Editable text
   const editable = document.createElement('div');
   editable.className = 'todo-text';
   editable.contentEditable = 'true';
@@ -250,13 +314,8 @@ function addSessionRow(container, sectionTitle, initialDay = '', initialTime = '
     `Type ${sectionTitle.toLowerCase()} details or tasks here…`
   );
 
-  // Checkbox behaviour
   checkbox.addEventListener('change', () => {
-    if (checkbox.checked) {
-      editable.classList.add('done');
-    } else {
-      editable.classList.remove('done');
-    }
+    editable.classList.toggle('done', checkbox.checked);
   });
 
   row.appendChild(checkbox);
@@ -266,17 +325,94 @@ function addSessionRow(container, sectionTitle, initialDay = '', initialTime = '
   container.appendChild(row);
 }
 
+/* =====================================================
+   DELETE / TRASH CONFIRM (CENTER POPUP + GRAY OVERLAY)
+===================================================== */
+function toggleDeleteConfirm(card) {
+  const id = card.dataset.id;
+  const inTrash = currentView === 'trash';
+
+  // Create overlay
+  const overlay = document.createElement('div');
+  overlay.className = 'delete-overlay';
+
+  // Create popup
+  const popup = document.createElement('div');
+  popup.className = 'delete-popup';
+
+  const msg = document.createElement('div');
+  msg.textContent = inTrash
+    ? 'Delete this note permanently?'
+    : 'Move this note to Trash?';
+
+  const buttons = document.createElement('div');
+  buttons.className = 'delete-popup-buttons';
+
+  const confirm = document.createElement('button');
+  confirm.className = 'delete-confirm-btn';
+  confirm.textContent = inTrash ? 'Delete' : 'Move to Trash';
+
+  const cancel = document.createElement('button');
+  cancel.className = 'delete-cancel-btn';
+  cancel.textContent = 'Cancel';
+
+  cancel.addEventListener('click', () => {
+    overlay.remove();
+  });
+
+  confirm.addEventListener('click', () => {
+    overlay.remove();
+
+    if (inTrash) {
+      deleteNoteById(id);
+    } else {
+      updateNoteStatus(id, 'trash');
+    }
+
+    card.remove();
+    if (!notesGrid.querySelector('.course-note')) {
+      ensurePlaceholder();
+    }
+  });
+
+  buttons.appendChild(confirm);
+  buttons.appendChild(cancel);
+
+  popup.appendChild(msg);
+  popup.appendChild(buttons);
+
+  overlay.appendChild(popup);
+  document.body.appendChild(overlay);
+}
+
+function attachDeleteHandler(card) {
+  const btn = card.querySelector('.course-note-delete');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    toggleDeleteConfirm(card);
+  });
+}
 
 /* =====================================================
-   CREATE COURSE CARD (VERTICAL + MULTIPLE SESSIONS)
+   CARD CREATION FROM NOTE OBJECT
 ===================================================== */
-function createCourseCard(courseName, sections, scheduleBySection) {
+function createCourseCardFromNote(note) {
+  if (!notesGrid) return;
+
   const card = document.createElement('article');
   card.className = 'course-note';
+  card.dataset.id = note.id;
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.type = 'button';
+  deleteBtn.className = 'course-note-delete';
+  deleteBtn.setAttribute('aria-label', 'Delete note');
+  deleteBtn.textContent = '✕';
+  card.appendChild(deleteBtn);
 
   const header = document.createElement('header');
   header.className = 'course-note-header';
-  header.textContent = courseName;
+  header.textContent = note.courseName;
   card.appendChild(header);
 
   const body = document.createElement('div');
@@ -289,7 +425,7 @@ function createCourseCard(courseName, sections, scheduleBySection) {
     seminars: 'Seminars'
   };
 
-  sections.forEach((key) => {
+  note.sections.forEach((key) => {
     const sectionDiv = document.createElement('div');
     sectionDiv.className = 'course-section';
 
@@ -297,13 +433,11 @@ function createCourseCard(courseName, sections, scheduleBySection) {
     h3.textContent = titles[key];
     sectionDiv.appendChild(h3);
 
-    // Container for multiple session rows
     const sessionsContainer = document.createElement('div');
     sessionsContainer.className = 'session-list';
     sectionDiv.appendChild(sessionsContainer);
 
-    // Seed first row from modal's chosen day/time (if any)
-    const sched = scheduleBySection[key] || {};
+    const sched = (note.schedule && note.schedule[key]) || {};
     addSessionRow(
       sessionsContainer,
       titles[key],
@@ -311,7 +445,6 @@ function createCourseCard(courseName, sections, scheduleBySection) {
       sched.time || ''
     );
 
-    // Button to add more times
     const addBtn = document.createElement('button');
     addBtn.type = 'button';
     addBtn.className = 'add-session-btn';
@@ -321,60 +454,88 @@ function createCourseCard(courseName, sections, scheduleBySection) {
     });
 
     sectionDiv.appendChild(addBtn);
-
     body.appendChild(sectionDiv);
   });
 
-  // Remove placeholder if it exists
-  const placeholder = notesGrid.querySelector('.note-placeholder');
-  if (placeholder) placeholder.remove();
-
-  // Add card to grid
+  attachDeleteHandler(card);
   notesGrid.appendChild(card);
 }
 
+/* =====================================================
+   INITIAL RENDER FOR CURRENT VIEW
+===================================================== */
+(function renderInitial() {
+  if (!notesGrid) return;
+
+  const allNotes = loadAllNotes();
+  const viewNotes = allNotes.filter((n) => n.status === currentView);
+
+  if (viewNotes.length === 0) {
+    ensurePlaceholder();
+  } else {
+    removePlaceholder();
+    viewNotes.forEach((n) => createCourseCardFromNote(n));
+  }
+})();
 
 /* =====================================================
-   FORM SUBMIT HANDLER
+   FORM SUBMIT (NOTES PAGE ONLY)
 ===================================================== */
-noteForm.addEventListener('submit', (e) => {
-  e.preventDefault();
+function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
 
-  const courseName = courseNameInput.value.trim();
-  if (!courseName) {
-    alert('Please enter a course name.');
-    return;
-  }
+if (currentView === 'notes' && noteForm && courseNameInput) {
+  noteForm.addEventListener('submit', (e) => {
+    e.preventDefault();
 
-  const activeSections = Array.from(optionButtons)
-    .filter((btn) => btn.classList.contains('active'))
-    .map((btn) => btn.dataset.section);
+    const courseName = courseNameInput.value.trim();
+    if (!courseName) {
+      alert('Please enter a course name.');
+      return;
+    }
 
-  if (activeSections.length === 0) {
-    alert('Select at least one section.');
-    return;
-  }
+    const activeSections = Array.from(optionButtons)
+      .filter((btn) => btn.classList.contains('active'))
+      .map((btn) => btn.dataset.section);
 
-  // Collect default schedule info from the modal (for the first row)
-  const scheduleBySection = {};
-  activeSections.forEach((name) => {
-    const row = document.querySelector(`.section-row[data-section="${name}"]`);
-    if (!row) return;
-    const daySel = row.querySelector('.day-select');
-    const hourSel = row.querySelector('.hour-select');
-    const minuteSel = row.querySelector('.minute-select');
+    if (activeSections.length === 0) {
+      alert('Select at least one section.');
+      return;
+    }
 
-    const hh = hourSel ? hourSel.value : '';
-    const mm = minuteSel ? minuteSel.value : '';
-    let time = '';
-    if (hh && mm) time = `${hh}:${mm}`;
+    const scheduleBySection = {};
+    activeSections.forEach((name) => {
+      const row = document.querySelector(
+        `.section-row[data-section="${name}"]`
+      );
+      if (!row) return;
+      const daySel = row.querySelector('.day-select');
+      const hourSel = row.querySelector('.hour-select');
+      const minuteSel = row.querySelector('.minute-select');
 
-    scheduleBySection[name] = {
-      day: daySel ? daySel.value : '',
-      time
+      const hh = hourSel ? hourSel.value : '';
+      const mm = minuteSel ? minuteSel.value : '';
+      let time = '';
+      if (hh && mm) time = `${hh}:${mm}`;
+
+      scheduleBySection[name] = {
+        day: daySel ? daySel.value : '',
+        time
+      };
+    });
+
+    const note = {
+      id: generateId(),
+      courseName,
+      sections: activeSections,
+      schedule: scheduleBySection,
+      status: 'notes'
     };
-  });
 
-  createCourseCard(courseName, activeSections, scheduleBySection);
-  closeModal();
-});
+    addNote(note);
+    removePlaceholder();
+    createCourseCardFromNote(note);
+    closeModal();
+  });
+}

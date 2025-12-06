@@ -3,20 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Uni Tracker</title>
+  <title>Uni Tracker – Notes</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body data-view="notes">
   <div class="app">
 
     <!-- Sidebar -->
     <aside class="sidebar">
-      <div class="brand">🎓 Uni&nbsp;Tracker</div>
+      <div class="brand">🎓 Uni Tracker</div>
       <nav>
-        <a class="nav-link active" href="#notes">💡 Notes</a>
-        <a class="nav-link" href="#reminders">🔔 Reminders</a>
-        <a class="nav-link" href="#archive">📁 Archive</a>
-        <a class="nav-link" href="#trash">🗑️ Trash</a>
+        <a class="nav-link active" href="index.html">💡 Notes</a>
+        <a class="nav-link" href="archive.html">📁 Archive</a>
+        <a class="nav-link" href="trash.html">🗑️ Trash</a>
       </nav>
     </aside>
 
@@ -27,7 +26,7 @@
 
     <!-- Main Content -->
     <main class="main">
-      <section id="notes">
+      <section>
         <h2>Notes</h2>
         <div class="notes-grid">
           <div class="note-placeholder">Your course notes will appear here...</div>
@@ -37,34 +36,25 @@
 
   </div>
 
-  <!-- ========== Modal Popup for Adding Course ========== -->
+  <!-- ADD COURSE MODAL -->
   <div class="modal-overlay hidden" id="note-modal">
     <div class="modal">
       <h2>Add course</h2>
 
       <form id="note-form">
-
         <div class="field">
           <span>Course name</span>
-          <input
-            type="text"
-            id="course-name"
-            placeholder="e.g. COMP3121"
-            required
-          />
+          <input type="text" id="course-name" placeholder="e.g. COMP3121" required />
         </div>
 
         <div class="field">
           <span>Include sections</span>
 
           <div class="option-toggle-group">
-            <!-- Lectures row -->
+
+            <!-- LECTURES -->
             <div class="section-row" data-section="lectures">
-              <button
-                type="button"
-                class="option-toggle active"
-                data-section="lectures"
-              >
+              <button type="button" class="option-toggle active" data-section="lectures">
                 ✓ Lectures
               </button>
               <div class="section-schedule">
@@ -72,109 +62,77 @@
                   Day
                   <select class="day-select">
                     <option value="">—</option>
-                    <option>Mon</option>
-                    <option>Tue</option>
-                    <option>Wed</option>
-                    <option>Thu</option>
-                    <option>Fri</option>
-                    <option>Sat</option>
-                    <option>Sun</option>
+                    <option>Mon</option><option>Tue</option><option>Wed</option>
+                    <option>Thu</option><option>Fri</option><option>Sat</option><option>Sun</option>
                   </select>
                 </label>
+
                 <label class="time-label">
                   Time
                   <div class="time-select-group">
-                    <select class="hour-select">
-                      <option value="">HH</option>
-                    </select>
-                    :
-                    <select class="minute-select">
-                      <option value="">MM</option>
-                    </select>
+                    <select class="hour-select"><option value="">HH</option></select> :
+                    <select class="minute-select"><option value="">MM</option></select>
                   </div>
                 </label>
               </div>
             </div>
 
-            <!-- Tutorials row -->
+            <!-- TUTORIALS -->
             <div class="section-row" data-section="tutorials">
-              <button
-                type="button"
-                class="option-toggle active"
-                data-section="tutorials"
-              >
+              <button type="button" class="option-toggle active" data-section="tutorials">
                 ✓ Tutorials
               </button>
+
               <div class="section-schedule">
                 <label>
                   Day
                   <select class="day-select">
                     <option value="">—</option>
-                    <option>Mon</option>
-                    <option>Tue</option>
-                    <option>Wed</option>
-                    <option>Thu</option>
-                    <option>Fri</option>
-                    <option>Sat</option>
-                    <option>Sun</option>
+                    <option>Mon</option><option>Tue</option><option>Wed</option>
+                    <option>Thu</option><option>Fri</option><option>Sat</option><option>Sun</option>
                   </select>
                 </label>
+
                 <label class="time-label">
                   Time
                   <div class="time-select-group">
-                    <select class="hour-select">
-                      <option value="">HH</option>
-                    </select>
-                    :
-                    <select class="minute-select">
-                      <option value="">MM</option>
-                    </select>
+                    <select class="hour-select"><option value="">HH</option></select> :
+                    <select class="minute-select"><option value="">MM</option></select>
                   </div>
                 </label>
               </div>
             </div>
 
-            <!-- Seminars row -->
+            <!-- SEMINARS -->
             <div class="section-row" data-section="seminars">
-              <button
-                type="button"
-                class="option-toggle"
-                data-section="seminars"
-              >
+              <button type="button" class="option-toggle" data-section="seminars">
                 ✕ Seminars
               </button>
+
               <div class="section-schedule">
                 <label>
                   Day
                   <select class="day-select">
                     <option value="">—</option>
-                    <option>Mon</option>
-                    <option>Tue</option>
-                    <option>Wed</option>
-                    <option>Thu</option>
-                    <option>Fri</option>
-                    <option>Sat</option>
-                    <option>Sun</option>
+                    <option>Mon</option><option>Tue</option><option>Wed</option>
+                    <option>Thu</option><option>Fri</option><option>Sat</option><option>Sun</option>
                   </select>
                 </label>
+
                 <label class="time-label">
                   Time
                   <div class="time-select-group">
-                    <select class="hour-select">
-                      <option value="">HH</option>
-                    </select>
-                    :
-                    <select class="minute-select">
-                      <option value="">MM</option>
-                    </select>
+                    <select class="hour-select"><option value="">HH</option></select> :
+                    <select class="minute-select"><option value="">MM</option></select>
                   </div>
                 </label>
               </div>
             </div>
+
           </div>
 
           <small class="field-help">
-            Click the pill to toggle. ✓ = include, ✕ = exclude. Day + time are optional (24-hour).
+            Click sections to include/exclude. Day + Time are optional.
           </small>
         </div>
 
