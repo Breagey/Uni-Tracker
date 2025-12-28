@@ -393,6 +393,25 @@ function attachDeleteHandler(card) {
   });
 }
 
+function attachRestoreHandler(card) {
+  if (currentView !== 'trash') return;
+
+  const btn = card.querySelector('.course-note-restore');
+  if (!btn) return;
+
+  btn.addEventListener('click', () => {
+    const id = card.dataset.id;
+    updateNoteStatus(id, 'notes');
+
+    card.remove();
+
+    if (!notesGrid.querySelector('.course-note')) {
+      ensurePlaceholder();
+    }
+  });
+}
+
+
 /* =====================================================
    CARD CREATION FROM NOTE OBJECT
 ===================================================== */
@@ -414,6 +433,14 @@ function createCourseCardFromNote(note) {
   header.className = 'course-note-header';
   header.textContent = note.courseName;
   card.appendChild(header);
+
+  if (currentView === 'trash') {
+    const restoreBtn = document.createElement('button');
+    restoreBtn.type = 'button';
+    restoreBtn.className = 'course-note-restore';
+    restoreBtn.textContent = 'Restore';
+    card.appendChild(restoreBtn);
+  }
 
   const body = document.createElement('div');
   body.className = 'course-note-body';
@@ -458,8 +485,11 @@ function createCourseCardFromNote(note) {
   });
 
   attachDeleteHandler(card);
+  attachRestoreHandler(card);
+
   notesGrid.appendChild(card);
 }
+
 
 /* =====================================================
    INITIAL RENDER FOR CURRENT VIEW

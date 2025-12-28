@@ -192,6 +192,25 @@ h2 {
   color: #ef4444;
 }
 
+.course-note-restore {
+  position: absolute;
+  top: 10px;
+  right: 40px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #f9fafb;
+  padding: 2px 10px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  color: #4b5563;
+}
+
+.course-note-restore:hover {
+  background: #ecfdf3;
+  border-color: #22c55e;
+  color: #16a34a;
+}
+
 .course-note-body {
   display: flex;
   flex-direction: column;
