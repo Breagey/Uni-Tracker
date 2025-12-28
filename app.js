@@ -51,6 +51,15 @@ function updateNoteStatus(id, newStatus) {
   }
 }
 
+function saveNoteObject(updatedNote) {
+  const notes = loadAllNotes();
+  const idx = notes.findIndex((n) => n.id === updatedNote.id);
+  if (idx !== -1) {
+    notes[idx] = updatedNote;
+    saveAllNotes(notes);
+  }
+}
+
 function deleteNoteById(id) {
   let notes = loadAllNotes();
   notes = notes.filter((n) => n.id !== id);
@@ -120,6 +129,30 @@ function buildDayOptions(selectEl) {
     opt.textContent = d;
     selectEl.appendChild(opt);
   });
+}
+
+function buildMonthOptions(selectEl) {
+  if (!selectEl) return;
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+  selectEl.innerHTML = '<option value="">MM</option>';
+  months.forEach((m, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;        // 0-11
+    opt.textContent = m;
+    selectEl.appendChild(opt);
+  });
+}
+
+function buildDateOptions(selectEl) {
+  if (!selectEl) return;
+  selectEl.innerHTML = '<option value="">DD</option>';
+  for (let d = 1; d <= 31; d++) {
+    const opt = document.createElement('option');
+    opt.value = d;
+    opt.textContent = d;
+    selectEl.appendChild(opt);
+  }
 }
 
 /* Only the Notes page has these modal hour/minute selects */
@@ -411,6 +444,238 @@ function attachRestoreHandler(card) {
   });
 }
 
+// =====================================================
+// TASK HELPERS (INLINE TODO + DEADLINES)
+// =====================================================
+
+function computeDueTimestamp(day, monthIndex) {
+  if (!day || monthIndex === '') return null;
+
+  const now = new Date();
+  const year = now.getFullYear();
+
+  let due = new Date(year, monthIndex, parseInt(day, 10), 23, 59, 0, 0);
+
+  // if that date already passed this year → push to next year
+  if (due.getTime() < now.getTime()) {
+    due = new Date(year + 1, monthIndex, parseInt(day, 10), 23, 59, 0, 0);
+  }
+
+  return due.getTime();
+}
+
+function getTaskUrgencyClass(day, monthIndex) {
+  const ts = computeDueTimestamp(day, monthIndex);
+  if (!ts) return 'task-none';
+
+  const now = Date.now();
+  const diffHours = (ts - now) / (1000 * 60 * 60);
+
+  if (diffHours <= 0) return 'task-overdue';
+  if (diffHours <= 24) return 'task-critical';
+  if (diffHours <= 72) return 'task-warning';
+  return 'task-ok';
+}
+
+function formatTaskDueLabel(day, monthIndex) {
+  const ts = computeDueTimestamp(day, monthIndex);
+  if (!ts) return 'No deadline';
+
+  const now = Date.now();
+  const diff = ts - now;
+  const diffHours = diff / (1000 * 60 * 60);
+
+  const absHours = Math.abs(diffHours);
+  const days = Math.floor(absHours / 24);
+  const hours = Math.floor(absHours % 24);
+
+  const parts = [];
+  if (days > 0) parts.push(`${days}d`);
+  if (hours > 0) parts.push(`${hours}h`);
+  if (!parts.length) parts.push('<1h');
+
+  if (diffHours >= 0) return `Due in ${parts.join(' ')}`;
+  return `Overdue by ${parts.join(' ')}`;
+}
+
+function renderTaskRow(task, note, container, editable) {
+  const row = document.createElement('div');
+  row.className = 'task-row';
+
+  // ---------------- LEFT: checkbox + editable text ----------------
+  const left = document.createElement('div');
+  left.className = 'task-left';
+
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.checked = !!task.completed;
+  checkbox.disabled = !editable;
+
+  const text = document.createElement('div');
+  text.className = 'task-text';
+  text.contentEditable = editable ? 'true' : 'false';
+  text.setAttribute('data-placeholder', 'Type task details…');
+  text.textContent = task.text || '';
+
+  if (task.completed) {
+    text.classList.add('done');
+  }
+
+  left.appendChild(checkbox);
+  left.appendChild(text);
+
+  // ---------------- RIGHT: date/month controls + label ----------------
+  const right = document.createElement('div');
+  right.className = 'task-right';
+
+  const timeWrapper = document.createElement('div');
+  timeWrapper.className = 'session-time-wrapper'; // reuse your pill styles
+
+  const pill = document.createElement('button');
+  pill.type = 'button';
+  pill.className = 'session-time-pill';
+
+  const editBox = document.createElement('div');
+  editBox.className = 'session-time-edit hidden';
+
+  const dateSelect = document.createElement('select');
+  dateSelect.className = 'task-date-select';
+  buildDateOptions(dateSelect); // uses 1–31
+
+  const monthSelect = document.createElement('select');
+  monthSelect.className = 'task-month-select';
+  buildMonthOptions(monthSelect); // uses Jan–Dec with value 0–11
+
+  // restore previous values if present
+  if (task.day) {
+    dateSelect.value = String(task.day);
+  }
+  if (task.month !== undefined && task.month !== '') {
+    monthSelect.value = String(task.month);
+  }
+
+  const dueLabel = document.createElement('span');
+  dueLabel.className = 'task-due';
+
+  const urgencyClasses = [
+    'task-none',
+    'task-ok',
+    'task-warning',
+    'task-critical',
+    'task-overdue'
+  ];
+
+  function applyUrgencyAndLabel() {
+    // remove all urgency classes
+    urgencyClasses.forEach((cls) => row.classList.remove(cls));
+
+    const monthIndex = (task.month === '' || task.month === undefined)
+      ? ''
+      : Number(task.month);
+
+    const cls = getTaskUrgencyClass(task.day, monthIndex);
+    row.classList.add(cls);
+
+    dueLabel.textContent = formatTaskDueLabel(task.day, monthIndex);
+  }
+
+  function updateUIFromTask() {
+    // sync selects with task object
+    dateSelect.value = task.day || '';
+    if (task.month === '' || task.month === undefined) {
+      monthSelect.value = '';
+    } else {
+      monthSelect.value = String(task.month);
+    }
+
+    // update pill text
+    if (task.day && task.month !== '' && task.month !== undefined) {
+      const monthIdx = Number(task.month);
+      const monthText =
+        monthSelect.options[monthIdx + 1]   // +1 because option[0] is "MM"
+          ? monthSelect.options[monthIdx + 1].textContent
+          : monthSelect.options[monthSelect.selectedIndex]?.textContent || '';
+      pill.textContent = `${task.day} ${monthText}`;
+    } else {
+      pill.textContent = 'Set due date';
+    }
+
+    applyUrgencyAndLabel();
+  }
+
+  function handleDateChange() {
+    task.day = dateSelect.value || '';
+    task.month = monthSelect.value === '' ? '' : Number(monthSelect.value);
+    updateUIFromTask();
+    saveNoteObject(note);
+  }
+
+  function handleMonthChange() {
+    task.day = dateSelect.value || '';
+    task.month = monthSelect.value === '' ? '' : Number(monthSelect.value);
+    updateUIFromTask();
+    saveNoteObject(note);
+  }
+
+  // initial UI state
+  updateUIFromTask();
+
+  if (!editable) {
+    pill.disabled = true;
+  } else {
+    pill.addEventListener('click', () => {
+      pill.classList.add('hidden');
+      editBox.classList.remove('hidden');
+      dateSelect.focus();
+    });
+
+    dateSelect.addEventListener('change', handleDateChange);
+    monthSelect.addEventListener('change', handleMonthChange);
+  }
+
+  const doneBtn = document.createElement('button');
+  doneBtn.type = 'button';
+  doneBtn.className = 'session-time-done';
+  doneBtn.textContent = 'Done';
+  doneBtn.addEventListener('click', () => {
+    editBox.classList.add('hidden');
+    pill.classList.remove('hidden');
+  });
+
+  editBox.appendChild(dateSelect);
+  editBox.appendChild(monthSelect);
+  editBox.appendChild(doneBtn);
+
+  timeWrapper.appendChild(pill);
+  timeWrapper.appendChild(editBox);
+
+  right.appendChild(timeWrapper);
+  right.appendChild(dueLabel);
+
+  // ---------------- wiring for checkbox & text ----------------
+  if (editable) {
+    checkbox.addEventListener('change', () => {
+      task.completed = checkbox.checked;
+      text.classList.toggle('done', task.completed);
+      saveNoteObject(note);
+    });
+
+    text.addEventListener('blur', () => {
+      task.text = text.textContent.trim();
+      saveNoteObject(note);
+    });
+
+    // optional live update as you type
+    text.addEventListener('input', () => {
+      task.text = text.textContent;
+    });
+  }
+
+  // ---------------- assemble row ----------------
+  row.appendChild(left);
+  row.appendChild(right);
+  container.appendChild(row);
+}
 
 /* =====================================================
    CARD CREATION FROM NOTE OBJECT
@@ -422,6 +687,7 @@ function createCourseCardFromNote(note) {
   card.className = 'course-note';
   card.dataset.id = note.id;
 
+  // Delete / trash
   const deleteBtn = document.createElement('button');
   deleteBtn.type = 'button';
   deleteBtn.className = 'course-note-delete';
@@ -434,6 +700,7 @@ function createCourseCardFromNote(note) {
   header.textContent = note.courseName;
   card.appendChild(header);
 
+  // Restore in Trash view
   if (currentView === 'trash') {
     const restoreBtn = document.createElement('button');
     restoreBtn.type = 'button';
@@ -452,6 +719,7 @@ function createCourseCardFromNote(note) {
     seminars: 'Seminars'
   };
 
+  // Existing sections (Lectures / Tutorials / Seminars)
   note.sections.forEach((key) => {
     const sectionDiv = document.createElement('div');
     sectionDiv.className = 'course-section';
@@ -484,12 +752,64 @@ function createCourseCardFromNote(note) {
     body.appendChild(sectionDiv);
   });
 
+  // =======================
+  // TASKS SECTION
+  // =======================
+  const tasksSection = document.createElement('div');
+  tasksSection.className = 'course-tasks';
+
+  const tasksHeader = document.createElement('div');
+  tasksHeader.className = 'course-tasks-header';
+
+  const tasksTitle = document.createElement('h3');
+  tasksTitle.textContent = 'Tasks';
+  tasksHeader.appendChild(tasksTitle);
+
+  const editableTasks = currentView === 'notes';
+
+  let tasksList = document.createElement('div');
+  tasksList.className = 'task-list';
+
+  if (editableTasks) {
+    const addTaskBtn = document.createElement('button');
+    addTaskBtn.type = 'button';
+    addTaskBtn.className = 'add-task-btn';
+    addTaskBtn.textContent = '+ Add task';
+    tasksHeader.appendChild(addTaskBtn);
+
+    addTaskBtn.addEventListener('click', () => {
+      if (!Array.isArray(note.tasks)) note.tasks = [];
+
+      const task = {
+        id: generateId(),
+        text: '',
+        day: '',
+        month: '',
+        completed: false
+      };
+
+      note.tasks.push(task);
+      saveNoteObject(note);
+      renderTaskRow(task, note, tasksList, true);
+    });
+  }
+
+  tasksSection.appendChild(tasksHeader);
+  tasksSection.appendChild(tasksList);
+  body.appendChild(tasksSection);
+
+  // render existing tasks
+  const tasks = Array.isArray(note.tasks) ? note.tasks : [];
+  tasks.forEach((task) => renderTaskRow(task, note, tasksList, editableTasks));
+
+  // hooks
   attachDeleteHandler(card);
-  attachRestoreHandler(card);
+  if (typeof attachRestoreHandler === 'function') {
+    attachRestoreHandler(card);
+  }
 
   notesGrid.appendChild(card);
-}
-
+} 
 
 /* =====================================================
    INITIAL RENDER FOR CURRENT VIEW
