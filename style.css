@@ -683,6 +683,22 @@ h2 {
   background: #fee2e2;      /* red */
 }
 
+.row-completed {
+  background: rgba(24, 120, 72, 0.22) !important;
+  border-left: 4px solid rgba(40, 180, 110, 0.85);
+  opacity: 0.82;
+}
+
+.row-completed .todo-text,
+.row-completed .task-text {
+  text-decoration: line-through;
+  opacity: 0.75;
+}
+
+.row-completed input[type="checkbox"] {
+  accent-color: rgb(40, 180, 110);
+}
+
 /* =====================================================
    RESPONSIVE LAYOUT
 ===================================================== */

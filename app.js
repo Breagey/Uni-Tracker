@@ -349,6 +349,7 @@ function addSessionRow(container, sectionTitle, initialDay = '', initialTime = '
 
   checkbox.addEventListener('change', () => {
     editable.classList.toggle('done', checkbox.checked);
+    row.classList.toggle('row-completed', checkbox.checked);
   });
 
   row.appendChild(checkbox);
@@ -501,6 +502,8 @@ function formatTaskDueLabel(day, monthIndex) {
 function renderTaskRow(task, note, container, editable) {
   const row = document.createElement('div');
   row.className = 'task-row';
+
+  row.classList.toggle('row-completed', !!task.completed);
 
   // ---------------- LEFT: checkbox + editable text ----------------
   const left = document.createElement('div');
@@ -657,6 +660,9 @@ function renderTaskRow(task, note, container, editable) {
     checkbox.addEventListener('change', () => {
       task.completed = checkbox.checked;
       text.classList.toggle('done', task.completed);
+
+      row.classList.toggle('row-completed', task.completed);
+
       saveNoteObject(note);
     });
 
