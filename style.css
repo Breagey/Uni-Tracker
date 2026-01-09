@@ -607,6 +607,11 @@ h2 {
   font-size: 0.8rem;
 }
 
+.task-row,
+.todo-row {
+  border: 1px solid transparent;
+}
+
 /* Left side: checkbox + editable text */
 .task-left {
   display: flex;
@@ -683,10 +688,12 @@ h2 {
   background: #fee2e2;      /* red */
 }
 
-.row-completed {
-  background: rgba(24, 120, 72, 0.22) !important;
-  border-left: 4px solid rgba(40, 180, 110, 0.85);
-  opacity: 0.82;
+.task-row.row-completed,
+.todo-row.row-completed {
+  background: rgba(16, 90, 55, 0.35) !important;
+  border: 1px solid rgba(40, 180, 110, 0.55) !important;
+  border-left: 6px solid rgba(40, 180, 110, 1) !important;
+  opacity: 0.92;
 }
 
 .row-completed .todo-text,
@@ -697,6 +704,16 @@ h2 {
 
 .row-completed input[type="checkbox"] {
   accent-color: rgb(40, 180, 110);
+}
+
+.session-repeat-select,
+.task-repeat-select {
+  background: #fff;
+  border: 1px solid var(--border);
+  color: var(--ink);
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 0.78rem;
 }
 
 /* =====================================================
