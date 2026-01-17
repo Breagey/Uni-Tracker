@@ -18,6 +18,135 @@ const minuteSelects = document.querySelectorAll('.minute-select');
 const STORAGE_KEY = 'uniTrackerNotes';
 
 /* =====================================================
+   TASK REORDER (HOLD + DRAG)
+===================================================== */
+const TASK_ORDER_HOLD_MS = 250;
+
+function isInteractiveWithinTask(el) {
+  // If they press on these, we should NOT start drag
+  return !!el.closest('input, button, select, textarea, a, label, [contenteditable="true"], .session-time-pill, .session-time-edit');
+}
+
+// Updates note.tasks array to match DOM order for THIS note’s task list
+function syncTaskOrderFromDOM(tasksListEl, note) {
+  if (!tasksListEl || !note) return;
+
+  const rows = Array.from(tasksListEl.querySelectorAll('.task-row'));
+  const orderedIds = rows.map(r => r.dataset.taskId).filter(Boolean);
+
+  if (!Array.isArray(note.tasks)) note.tasks = [];
+
+  const map = new Map(note.tasks.map(t => [t.id, t]));
+  const reordered = [];
+
+  for (const id of orderedIds) {
+    const t = map.get(id);
+    if (t) reordered.push(t);
+  }
+
+  // keep any tasks not currently rendered (just in case)
+  for (const t of note.tasks) {
+    if (!orderedIds.includes(t.id)) reordered.push(t);
+  }
+
+  note.tasks = reordered;
+  saveNoteObject(note);
+}
+
+function setupTaskHoldDragReorder(tasksListEl, note, editable) {
+  if (!tasksListEl || !note || !editable) return;
+
+  let pressTimer = null;
+  let dragEnabledRow = null;
+
+  function clearPress() {
+    if (pressTimer) clearTimeout(pressTimer);
+    pressTimer = null;
+  }
+
+  tasksListEl.addEventListener('pointerdown', (e) => {
+    const row = e.target.closest('.task-row');
+    if (!row || !tasksListEl.contains(row)) return;
+
+    // Only allow drag if they press the "background", not controls/text
+    if (isInteractiveWithinTask(e.target)) return;
+
+    clearPress();
+    pressTimer = setTimeout(() => {
+      dragEnabledRow = row;
+      row.setAttribute('draggable', 'true');
+      row.classList.add('drag-ready');
+    }, TASK_ORDER_HOLD_MS);
+  });
+
+  tasksListEl.addEventListener('pointerup', clearPress);
+  tasksListEl.addEventListener('pointercancel', clearPress);
+
+  // if they start moving before hold time finishes, cancel (prevents accidental hold while scrolling)
+  tasksListEl.addEventListener('pointermove', () => {
+    if (pressTimer) clearPress();
+  });
+
+  tasksListEl.addEventListener('dragstart', (e) => {
+    const row = e.target.closest('.task-row');
+    if (!row) return;
+
+    // Only allow drag if it was enabled by hold
+    if (row !== dragEnabledRow) {
+      e.preventDefault();
+      return;
+    }
+
+    row.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', row.dataset.taskId || ''); // firefox needs data
+  });
+
+  tasksListEl.addEventListener('dragover', (e) => {
+    e.preventDefault();
+
+    const dragging = tasksListEl.querySelector('.task-row.dragging');
+    if (!dragging) return;
+
+    const over = e.target.closest('.task-row');
+    if (!over || over === dragging) return;
+
+    // visual
+    tasksListEl.querySelectorAll('.task-row.drag-over').forEach(r => r.classList.remove('drag-over'));
+    over.classList.add('drag-over');
+
+    // insert before/after depending on cursor
+    const rect = over.getBoundingClientRect();
+    const before = (e.clientY - rect.top) < rect.height / 2;
+
+    if (before) tasksListEl.insertBefore(dragging, over);
+    else tasksListEl.insertBefore(dragging, over.nextSibling);
+  });
+
+  tasksListEl.addEventListener('dragleave', (e) => {
+    const over = e.target.closest('.task-row');
+    if (over) over.classList.remove('drag-over');
+  });
+
+  tasksListEl.addEventListener('dragend', (e) => {
+    const row = e.target.closest('.task-row');
+    if (!row) return;
+
+    // cleanup visuals
+    tasksListEl.querySelectorAll('.task-row.drag-over').forEach(r => r.classList.remove('drag-over'));
+    row.classList.remove('dragging');
+    row.classList.remove('drag-ready');
+
+    // disable draggable until next hold
+    row.removeAttribute('draggable');
+    dragEnabledRow = null;
+
+    // persist order into note.tasks
+    syncTaskOrderFromDOM(tasksListEl, note);
+  });
+}
+
+/* =====================================================
    ID HELPER
 ===================================================== */
 function generateId() {
@@ -635,6 +764,8 @@ function renderTaskRow(task, note, container, editable) {
   const row = document.createElement('div');
   row.className = 'task-row';
 
+  row.setAttribute('draggable', 'false');
+
   row.dataset.taskId = task.id;
   row.dataset.noteId = note.id;
 
@@ -950,6 +1081,8 @@ function createCourseCardFromNote(note) {
     if (task.repeat === undefined) task.repeat = 'none'; // back-compat
     renderTaskRow(task, note, tasksList, editableCard);
   });
+
+  setupTaskHoldDragReorder(tasksList, note, editableCard);
 
   // hooks
   attachDeleteHandler(card);
