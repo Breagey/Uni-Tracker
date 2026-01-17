@@ -771,7 +771,6 @@ function renderTaskRow(task, note, container, editable) {
 
   row.classList.toggle('row-completed', !!task.completed);
 
-  // LEFT
   const left = document.createElement('div');
   left.className = 'task-left';
 
@@ -790,7 +789,6 @@ function renderTaskRow(task, note, container, editable) {
   left.appendChild(checkbox);
   left.appendChild(text);
 
-  // RIGHT
   const right = document.createElement('div');
   right.className = 'task-right';
 
@@ -817,7 +815,6 @@ function renderTaskRow(task, note, container, editable) {
   repeatSelect.className = 'task-repeat-select';
   buildRepeatOptions(repeatSelect);
 
-  // restore values
   if (task.day) dateSelect.value = String(task.day);
   if (task.month !== undefined && task.month !== '') monthSelect.value = String(task.month);
   repeatSelect.value = task.repeat || 'none';
@@ -865,7 +862,6 @@ function renderTaskRow(task, note, container, editable) {
     saveNoteObject(note);
   }
 
-  // init UI
   updatePillText();
   applyUrgencyAndLabel();
 
@@ -904,7 +900,6 @@ function renderTaskRow(task, note, container, editable) {
   right.appendChild(timeWrapper);
   right.appendChild(dueLabel);
 
-  // checkbox + text saving
   if (editable) {
     checkbox.addEventListener('change', () => {
       task.completed = checkbox.checked;
