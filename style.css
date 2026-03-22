@@ -749,6 +749,39 @@ h2 {
   font-size: 0.78rem;
 }
 
+.session-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.session-row-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.session-row-top .session-time-wrapper {
+  flex: 1;
+}
+
+.session-details {
+  margin-left: 28px;
+}
+
+.row-delete-btn {
+  border: none;
+  background: transparent;
+  color: #888;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.row-delete-btn:hover {
+  color: #d11a2a;
+}
+
 /* =====================================================
    RESPONSIVE LAYOUT
 ===================================================== */
