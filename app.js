@@ -568,8 +568,11 @@ function addSessionRow(
   timeWrapper.appendChild(pill);
   timeWrapper.appendChild(editBox);
 
-  const topBar = document.createElement("div");
-  topBar.className = "session-row-top";
+  const topBar = document.createElement('div');
+  topBar.className = 'session-row-top';
+
+  const leftGroup = document.createElement('div');
+  leftGroup.className = 'session-row-left';
 
   const editableText = document.createElement("div");
   editableText.className = "todo-text session-details";
@@ -610,9 +613,12 @@ function addSessionRow(
     saveNoteObject(note);
   });
 
-  topBar.appendChild(checkbox);
-  topBar.appendChild(timeWrapper);
+  leftGroup.appendChild(checkbox);
+  leftGroup.appendChild(timeWrapper);
+
+  topBar.appendChild(leftGroup);
   topBar.appendChild(deleteBtn);
+
 
   row.appendChild(topBar);
   row.appendChild(editableText);
