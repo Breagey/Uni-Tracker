@@ -568,11 +568,11 @@ function addSessionRow(
   timeWrapper.appendChild(pill);
   timeWrapper.appendChild(editBox);
 
-  const topBar = document.createElement('div');
-  topBar.className = 'session-row-top';
+  const topBar = document.createElement("div");
+  topBar.className = "session-row-top";
 
-  const leftGroup = document.createElement('div');
-  leftGroup.className = 'session-row-left';
+  const leftGroup = document.createElement("div");
+  leftGroup.className = "session-row-left";
 
   const editableText = document.createElement("div");
   editableText.className = "todo-text session-details";
@@ -618,7 +618,6 @@ function addSessionRow(
 
   topBar.appendChild(leftGroup);
   topBar.appendChild(deleteBtn);
-
 
   row.appendChild(topBar);
   row.appendChild(editableText);
@@ -683,17 +682,32 @@ function attachDeleteHandler(card) {
 }
 
 function attachRestoreHandler(card) {
-  if (currentView !== "trash") return;
+  if (currentView !== 'trash' && currentView !== 'archive') return;
 
-  const btn = card.querySelector(".course-note-restore");
+  const btn = card.querySelector('.course-note-restore');
   if (!btn) return;
 
-  btn.addEventListener("click", () => {
+  btn.addEventListener('click', () => {
     const id = card.dataset.id;
-    updateNoteStatus(id, "notes");
+    updateNoteStatus(id, 'notes');
 
     card.remove();
-    if (!notesGrid.querySelector(".course-note")) ensurePlaceholder();
+    if (!notesGrid.querySelector('.course-note')) ensurePlaceholder();
+  });
+}
+
+function attachArchiveHandler(card) {
+  if (currentView !== 'notes') return;
+
+  const btn = card.querySelector('.course-note-archive');
+  if (!btn) return;
+
+  btn.addEventListener('click', () => {
+    const id = card.dataset.id;
+    updateNoteStatus(id, 'archive');
+
+    card.remove();
+    if (!notesGrid.querySelector('.course-note')) ensurePlaceholder();
   });
 }
 
@@ -1051,13 +1065,21 @@ function createCourseCardFromNote(note) {
   deleteBtn.textContent = "✕";
   card.appendChild(deleteBtn);
 
+  if (currentView === "notes") {
+    const archiveBtn = document.createElement("button");
+    archiveBtn.type = "button";
+    archiveBtn.className = "course-note-archive";
+    archiveBtn.textContent = "Archive";
+    card.appendChild(archiveBtn);
+  }
+
   const header = document.createElement("header");
   header.className = "course-note-header";
   header.textContent = note.courseName;
   card.appendChild(header);
 
   // Restore in Trash view
-  if (currentView === "trash") {
+  if (currentView === 'trash' || currentView === 'archive') {
     const restoreBtn = document.createElement("button");
     restoreBtn.type = "button";
     restoreBtn.className = "course-note-restore";
@@ -1207,6 +1229,7 @@ function createCourseCardFromNote(note) {
   // hooks
   attachDeleteHandler(card);
   attachRestoreHandler(card);
+  attachArchiveHandler(card);
 
   notesGrid.appendChild(card);
 }

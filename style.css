@@ -797,6 +797,22 @@ h2 {
   color: #d11a2a;
 }
 
+.course-note-archive {
+  position: absolute;
+  top: 12px;
+  right: 44px;
+  border: none;
+  background: #ece8ff;
+  color: #4a3ca3;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.course-note-archive:hover {
+  background: #ddd6ff;
+}
+
 /* =====================================================
    RESPONSIVE LAYOUT
 ===================================================== */
