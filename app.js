@@ -23,13 +23,11 @@ const STORAGE_KEY = "uniTrackerNotes";
 const TASK_ORDER_HOLD_MS = 250;
 
 function isInteractiveWithinTask(el) {
-  // If they press on these, we should NOT start drag
   return !!el.closest(
     'input, button, select, textarea, a, label, [contenteditable="true"], .session-time-pill, .session-time-edit',
   );
 }
 
-// Updates note.tasks array to match DOM order for THIS note’s task list
 function syncTaskOrderFromDOM(tasksListEl, note) {
   if (!tasksListEl || !note) return;
 
@@ -46,7 +44,6 @@ function syncTaskOrderFromDOM(tasksListEl, note) {
     if (t) reordered.push(t);
   }
 
-  // keep any tasks not currently rendered (just in case)
   for (const t of note.tasks) {
     if (!orderedIds.includes(t.id)) reordered.push(t);
   }
@@ -69,8 +66,6 @@ function setupTaskHoldDragReorder(tasksListEl, note, editable) {
   tasksListEl.addEventListener("pointerdown", (e) => {
     const row = e.target.closest(".task-row");
     if (!row || !tasksListEl.contains(row)) return;
-
-    // Only allow drag if they press the "background", not controls/text
     if (isInteractiveWithinTask(e.target)) return;
 
     clearPress();
@@ -83,8 +78,6 @@ function setupTaskHoldDragReorder(tasksListEl, note, editable) {
 
   tasksListEl.addEventListener("pointerup", clearPress);
   tasksListEl.addEventListener("pointercancel", clearPress);
-
-  // if they start moving before hold time finishes, cancel (prevents accidental hold while scrolling)
   tasksListEl.addEventListener("pointermove", () => {
     if (pressTimer) clearPress();
   });
@@ -92,37 +85,27 @@ function setupTaskHoldDragReorder(tasksListEl, note, editable) {
   tasksListEl.addEventListener("dragstart", (e) => {
     const row = e.target.closest(".task-row");
     if (!row) return;
-
-    // Only allow drag if it was enabled by hold
     if (row !== dragEnabledRow) {
       e.preventDefault();
       return;
     }
-
     row.classList.add("dragging");
     e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", row.dataset.taskId || ""); // firefox needs data
+    e.dataTransfer.setData("text/plain", row.dataset.taskId || "");
   });
 
   tasksListEl.addEventListener("dragover", (e) => {
     e.preventDefault();
-
     const dragging = tasksListEl.querySelector(".task-row.dragging");
     if (!dragging) return;
-
     const over = e.target.closest(".task-row");
     if (!over || over === dragging) return;
-
-    // visual
     tasksListEl
       .querySelectorAll(".task-row.drag-over")
       .forEach((r) => r.classList.remove("drag-over"));
     over.classList.add("drag-over");
-
-    // insert before/after depending on cursor
     const rect = over.getBoundingClientRect();
     const before = e.clientY - rect.top < rect.height / 2;
-
     if (before) tasksListEl.insertBefore(dragging, over);
     else tasksListEl.insertBefore(dragging, over.nextSibling);
   });
@@ -135,19 +118,13 @@ function setupTaskHoldDragReorder(tasksListEl, note, editable) {
   tasksListEl.addEventListener("dragend", (e) => {
     const row = e.target.closest(".task-row");
     if (!row) return;
-
-    // cleanup visuals
     tasksListEl
       .querySelectorAll(".task-row.drag-over")
       .forEach((r) => r.classList.remove("drag-over"));
     row.classList.remove("dragging");
     row.classList.remove("drag-ready");
-
-    // disable draggable until next hold
     row.removeAttribute("draggable");
     dragEnabledRow = null;
-
-    // persist order into note.tasks
     syncTaskOrderFromDOM(tasksListEl, note);
   });
 }
@@ -275,24 +252,11 @@ function buildDayOptions(selectEl) {
 
 function buildMonthOptions(selectEl) {
   if (!selectEl) return;
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   selectEl.innerHTML = '<option value="">MM</option>';
   months.forEach((m, i) => {
     const opt = document.createElement("option");
-    opt.value = i; // 0-11
+    opt.value = i;
     opt.textContent = m;
     selectEl.appendChild(opt);
   });
@@ -373,7 +337,6 @@ function setScheduleEnabledForButton(btn) {
   if (!schedule) return;
   const enabled = btn.classList.contains("active");
   const inputs = schedule.querySelectorAll("select");
-
   if (enabled) {
     schedule.classList.remove("disabled");
     inputs.forEach((el) => (el.disabled = false));
@@ -396,7 +359,6 @@ function resetOptionButtons() {
     }
 
     selects.forEach((sel) => (sel.value = ""));
-
     updateOptionButtonText(btn);
     setScheduleEnabledForButton(btn);
   });
@@ -416,24 +378,15 @@ if (currentView === "notes") {
 
 /* =====================================================
    SESSIONS (LECT/TUT/SEM) ROWS ON CARDS
-   - Includes Day / Time / Repeat like your screenshot
 ===================================================== */
 function repeatLabel(rep) {
   if (!rep || rep === "none") return "Does not repeat";
   return rep.charAt(0).toUpperCase() + rep.slice(1);
 }
 
-function addSessionRow(
-  container,
-  sectionTitle,
-  note,
-  sectionKey,
-  sessionObj,
-  editable,
-) {
+function addSessionRow(container, sectionTitle, note, sectionKey, sessionObj, editable) {
   const row = document.createElement("div");
   row.className = "todo-row session-row";
-
   row.dataset.sessionId = sessionObj.id;
   row.dataset.noteId = note.id;
   row.dataset.sectionKey = sectionKey;
@@ -479,7 +432,6 @@ function addSessionRow(
   doneBtn.textContent = "Done";
   doneBtn.disabled = !editable;
 
-  // Restore from sessionObj
   daySelect.value = sessionObj.day || "";
   repeatSelect.value = sessionObj.repeat || "none";
 
@@ -494,12 +446,10 @@ function addSessionRow(
     const hh = hourSelect.value;
     const mm = minuteSelect.value;
     const rep = repeatSelect.value || "none";
-
     const parts = [];
     if (day) parts.push(day);
     if (hh && mm) parts.push(`${hh}:${mm}`);
     parts.push(repeatLabel(rep));
-
     pill.textContent = parts.join(" · ");
   }
 
@@ -511,22 +461,16 @@ function addSessionRow(
 
   function saveSessionFromControls() {
     if (!editable) return;
-
     const hh = hourSelect.value;
     const mm = minuteSelect.value;
-
     sessionObj.day = daySelect.value || "";
     sessionObj.time = hh && mm ? `${hh}:${mm}` : "";
     sessionObj.repeat = repeatSelect.value || "none";
     sessionObj.nextResetAt = computeNextSessionResetAt(sessionObj, Date.now());
-
     ensureSessionTimesArray();
-    const idx = note.sessionTimes[sectionKey].findIndex(
-      (s) => s.id === sessionObj.id,
-    );
+    const idx = note.sessionTimes[sectionKey].findIndex((s) => s.id === sessionObj.id);
     if (idx === -1) note.sessionTimes[sectionKey].push(sessionObj);
     else note.sessionTimes[sectionKey][idx] = sessionObj;
-
     saveNoteObject(note);
   }
 
@@ -577,10 +521,7 @@ function addSessionRow(
   const editableText = document.createElement("div");
   editableText.className = "todo-text session-details";
   editableText.contentEditable = editable ? "true" : "false";
-  editableText.setAttribute(
-    "data-placeholder",
-    `Type ${sectionTitle.toLowerCase()} details here…`,
-  );
+  editableText.setAttribute("data-placeholder", `Type ${sectionTitle.toLowerCase()} details here…`);
   editableText.textContent = sessionObj.text || "";
 
   const deleteBtn = document.createElement("button");
@@ -625,7 +566,7 @@ function addSessionRow(
 }
 
 /* =====================================================
-   DELETE / TRASH CONFIRM (CENTER POPUP + GRAY OVERLAY)
+   DELETE / TRASH CONFIRM
 ===================================================== */
 function toggleDeleteConfirm(card) {
   const id = card.dataset.id;
@@ -638,9 +579,7 @@ function toggleDeleteConfirm(card) {
   popup.className = "delete-popup";
 
   const msg = document.createElement("div");
-  msg.textContent = inTrash
-    ? "Delete this note permanently?"
-    : "Move this note to Trash?";
+  msg.textContent = inTrash ? "Delete this note permanently?" : "Move this note to Trash?";
 
   const buttons = document.createElement("div");
   buttons.className = "delete-popup-buttons";
@@ -657,20 +596,16 @@ function toggleDeleteConfirm(card) {
 
   confirm.addEventListener("click", () => {
     overlay.remove();
-
     if (inTrash) deleteNoteById(id);
     else updateNoteStatus(id, "trash");
-
     card.remove();
     if (!notesGrid.querySelector(".course-note")) ensurePlaceholder();
   });
 
   buttons.appendChild(confirm);
   buttons.appendChild(cancel);
-
   popup.appendChild(msg);
   popup.appendChild(buttons);
-
   overlay.appendChild(popup);
   document.body.appendChild(overlay);
 }
@@ -682,32 +617,26 @@ function attachDeleteHandler(card) {
 }
 
 function attachRestoreHandler(card) {
-  if (currentView !== 'trash' && currentView !== 'archive') return;
-
-  const btn = card.querySelector('.course-note-restore');
+  if (currentView !== "trash" && currentView !== "archive") return;
+  const btn = card.querySelector(".course-note-restore");
   if (!btn) return;
-
-  btn.addEventListener('click', () => {
+  btn.addEventListener("click", () => {
     const id = card.dataset.id;
-    updateNoteStatus(id, 'notes');
-
+    updateNoteStatus(id, "notes");
     card.remove();
-    if (!notesGrid.querySelector('.course-note')) ensurePlaceholder();
+    if (!notesGrid.querySelector(".course-note")) ensurePlaceholder();
   });
 }
 
 function attachArchiveHandler(card) {
-  if (currentView !== 'notes') return;
-
-  const btn = card.querySelector('.course-note-archive');
+  if (currentView !== "notes") return;
+  const btn = card.querySelector(".course-note-archive");
   if (!btn) return;
-
-  btn.addEventListener('click', () => {
+  btn.addEventListener("click", () => {
     const id = card.dataset.id;
-    updateNoteStatus(id, 'archive');
-
+    updateNoteStatus(id, "archive");
     card.remove();
-    if (!notesGrid.querySelector('.course-note')) ensurePlaceholder();
+    if (!notesGrid.querySelector(".course-note")) ensurePlaceholder();
   });
 }
 
@@ -716,10 +645,8 @@ function attachArchiveHandler(card) {
 ===================================================== */
 function computeDueTimestamp(day, monthIndex) {
   if (!day || monthIndex === "") return null;
-
   const now = new Date();
   const year = now.getFullYear();
-
   let due = new Date(year, monthIndex, parseInt(day, 10), 23, 59, 0, 0);
   if (due.getTime() < now.getTime()) {
     due = new Date(year + 1, monthIndex, parseInt(day, 10), 23, 59, 0, 0);
@@ -730,10 +657,8 @@ function computeDueTimestamp(day, monthIndex) {
 function getTaskUrgencyClass(day, monthIndex) {
   const ts = computeDueTimestamp(day, monthIndex);
   if (!ts) return "task-none";
-
   const now = Date.now();
   const diffHours = (ts - now) / (1000 * 60 * 60);
-
   if (diffHours <= 0) return "task-overdue";
   if (diffHours <= 24) return "task-critical";
   if (diffHours <= 72) return "task-warning";
@@ -743,20 +668,16 @@ function getTaskUrgencyClass(day, monthIndex) {
 function formatTaskDueLabel(day, monthIndex) {
   const ts = computeDueTimestamp(day, monthIndex);
   if (!ts) return "No deadline";
-
   const now = Date.now();
   const diff = ts - now;
   const diffHours = diff / (1000 * 60 * 60);
-
   const absHours = Math.abs(diffHours);
   const days = Math.floor(absHours / 24);
   const hours = Math.floor(absHours % 24);
-
   const parts = [];
   if (days > 0) parts.push(`${days}d`);
   if (hours > 0) parts.push(`${hours}h`);
   if (!parts.length) parts.push("<1h");
-
   if (diffHours >= 0) return `Due in ${parts.join(" ")}`;
   return `Overdue by ${parts.join(" ")}`;
 }
@@ -771,10 +692,7 @@ function addMonths(dateObj, months) {
   const d = new Date(dateObj);
   const day = d.getDate();
   d.setMonth(d.getMonth() + months);
-
-  if (d.getDate() !== day) {
-    d.setDate(0);
-  }
+  if (d.getDate() !== day) d.setDate(0);
   return d;
 }
 
@@ -785,21 +703,16 @@ function addYears(dateObj, years) {
 }
 
 function advanceTaskDueDate(task) {
-  if (!task || !task.day || task.month === "" || task.month === undefined)
-    return false;
+  if (!task || !task.day || task.month === "" || task.month === undefined) return false;
   if (!task.repeat || task.repeat === "none") return false;
-
   const baseTs = computeDueTimestamp(task.day, Number(task.month));
   if (!baseTs) return false;
-
   let next = new Date(baseTs);
-
   if (task.repeat === "daily") next = addDays(next, 1);
   else if (task.repeat === "weekly") next = addDays(next, 7);
   else if (task.repeat === "monthly") next = addMonths(next, 1);
   else if (task.repeat === "yearly") next = addYears(next, 1);
   else return false;
-
   task.day = next.getDate();
   task.month = next.getMonth();
   return true;
@@ -808,60 +721,294 @@ function advanceTaskDueDate(task) {
 function rolloverRepeatingTaskIfDuePassed(task, nowMs = Date.now()) {
   if (!task || !task.repeat || task.repeat === "none") return false;
   if (!task.day || task.month === "" || task.month === undefined) return false;
-
   let changed = false;
   let ts = computeDueTimestamp(task.day, Number(task.month));
   if (!ts) return false;
-
   while (ts <= nowMs) {
     const ok = advanceTaskDueDate(task);
     if (!ok) break;
     changed = true;
-
     task.completed = false;
-
     ts = computeDueTimestamp(task.day, Number(task.month));
     if (!ts) break;
   }
-
   return changed;
 }
 
 function deleteSessionById(note, sectionKey, sessionId) {
-  if (
-    !note ||
-    !note.sessionTimes ||
-    !Array.isArray(note.sessionTimes[sectionKey])
-  )
-    return;
-
-  note.sessionTimes[sectionKey] = note.sessionTimes[sectionKey].filter(
-    (session) => session.id !== sessionId,
-  );
-
+  if (!note || !note.sessionTimes || !Array.isArray(note.sessionTimes[sectionKey])) return;
+  note.sessionTimes[sectionKey] = note.sessionTimes[sectionKey].filter((s) => s.id !== sessionId);
   saveNoteObject(note);
 }
 
 function deleteTaskById(note, taskId) {
   if (!note || !Array.isArray(note.tasks)) return;
-
-  note.tasks = note.tasks.filter((task) => task.id !== taskId);
+  note.tasks = note.tasks.filter((t) => t.id !== taskId);
   saveNoteObject(note);
 }
 
 /* =====================================================
-   TASK ROW (adds Repeat selector: none/daily/weekly/monthly/yearly)
+   TASK STEPS HELPERS
+===================================================== */
+
+/**
+ * Returns { done, total } counts for a task's steps.
+ */
+function getStepCounts(task) {
+  const steps = Array.isArray(task.steps) ? task.steps : [];
+  const total = steps.length;
+  const done = steps.filter((s) => s.completed).length;
+  return { done, total };
+}
+
+/**
+ * Updates the progress bar + label in the stepsWrapper element.
+ */
+function refreshProgressUI(task, stepsWrapper) {
+  const { done, total } = getStepCounts(task);
+
+  const fill = stepsWrapper.querySelector(".task-progress-bar-fill");
+  const label = stepsWrapper.querySelector(".task-progress-label");
+  const toggleBtn = stepsWrapper.querySelector(".task-steps-toggle");
+
+  if (total === 0) {
+    // Hide progress bar when no steps
+    const barWrap = stepsWrapper.querySelector(".task-progress-bar-wrap");
+    if (barWrap) barWrap.style.display = "none";
+    if (label) label.style.display = "none";
+    if (toggleBtn) toggleBtn.textContent = "";
+    if (toggleBtn) {
+      toggleBtn.innerHTML = `<i class="toggle-arrow">▶</i> Steps`;
+      if (toggleBtn.classList.contains("open")) {
+        toggleBtn.innerHTML = `<i class="toggle-arrow">▶</i> Steps`;
+      }
+    }
+    return;
+  }
+
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+  const barWrap = stepsWrapper.querySelector(".task-progress-bar-wrap");
+  if (barWrap) barWrap.style.display = "";
+  if (label) label.style.display = "";
+
+  if (fill) {
+    fill.style.width = pct + "%";
+    fill.classList.toggle("all-done", done === total && total > 0);
+  }
+
+  if (label) {
+    const progressSpan = label.querySelector(".progress-numbers");
+    if (progressSpan) {
+      progressSpan.textContent = `${done} / ${total} steps`;
+    }
+  }
+
+  if (toggleBtn) {
+    const arrow = toggleBtn.querySelector(".toggle-arrow");
+    const isOpen = toggleBtn.classList.contains("open");
+    toggleBtn.innerHTML = "";
+    const arrowEl = document.createElement("i");
+    arrowEl.className = "toggle-arrow";
+    arrowEl.textContent = "▶";
+    if (isOpen) arrowEl.style.transform = "rotate(90deg)";
+    toggleBtn.appendChild(arrowEl);
+    toggleBtn.appendChild(document.createTextNode(` Steps (${done}/${total})`));
+  }
+}
+
+/**
+ * Renders a single step row and appends it to stepsListEl.
+ */
+function renderStepRow(step, task, note, stepsListEl, stepsWrapper, editable) {
+  const row = document.createElement("div");
+  row.className = "step-row";
+  row.dataset.stepId = step.id;
+
+  const cb = document.createElement("input");
+  cb.type = "checkbox";
+  cb.checked = !!step.completed;
+  cb.disabled = !editable;
+
+  const txt = document.createElement("div");
+  txt.className = "step-text" + (step.completed ? " done" : "");
+  txt.contentEditable = editable ? "true" : "false";
+  txt.setAttribute("data-placeholder", "Step description…");
+  txt.textContent = step.text || "";
+
+  const delBtn = document.createElement("button");
+  delBtn.type = "button";
+  delBtn.className = "step-delete-btn";
+  delBtn.textContent = "✕";
+  delBtn.disabled = !editable;
+  delBtn.setAttribute("aria-label", "Delete step");
+
+  if (editable) {
+    cb.addEventListener("change", () => {
+      step.completed = cb.checked;
+      txt.classList.toggle("done", cb.checked);
+      saveNoteObject(note);
+      refreshProgressUI(task, stepsWrapper);
+    });
+
+    txt.addEventListener("blur", () => {
+      step.text = txt.textContent.trim();
+      saveNoteObject(note);
+    });
+
+    txt.addEventListener("input", () => {
+      step.text = txt.textContent;
+    });
+
+    // Enter key adds a new step
+    txt.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const newStep = { id: generateId(), text: "", completed: false };
+        if (!Array.isArray(task.steps)) task.steps = [];
+        const idx = task.steps.findIndex((s) => s.id === step.id);
+        task.steps.splice(idx + 1, 0, newStep);
+        saveNoteObject(note);
+        const newRow = renderStepRow(newStep, task, note, stepsListEl, stepsWrapper, true);
+        row.insertAdjacentElement("afterend", newRow);
+        refreshProgressUI(task, stepsWrapper);
+        // Focus the new step text
+        const newTxt = newRow.querySelector(".step-text");
+        if (newTxt) newTxt.focus();
+      }
+    });
+
+    delBtn.addEventListener("click", () => {
+      if (!Array.isArray(task.steps)) task.steps = [];
+      task.steps = task.steps.filter((s) => s.id !== step.id);
+      saveNoteObject(note);
+      row.remove();
+      refreshProgressUI(task, stepsWrapper);
+    });
+  }
+
+  row.appendChild(cb);
+  row.appendChild(txt);
+  if (editable) row.appendChild(delBtn);
+  stepsListEl.appendChild(row);
+  return row;
+}
+
+/**
+ * Builds the full steps sub-section (toggle + progress + steps list + add button)
+ * and returns the wrapper element to be appended below .task-row-main.
+ */
+function buildStepsSubSection(task, note, editable) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "task-steps-wrapper";
+
+  // ---- Progress bar ----
+  const barWrap = document.createElement("div");
+  barWrap.className = "task-progress-bar-wrap";
+
+  const barFill = document.createElement("div");
+  barFill.className = "task-progress-bar-fill";
+  barFill.style.width = "0%";
+  barWrap.appendChild(barFill);
+
+  // ---- Progress label row (count left, toggle right) ----
+  const labelRow = document.createElement("div");
+  labelRow.className = "task-progress-label";
+
+  const progressNumbers = document.createElement("span");
+  progressNumbers.className = "progress-numbers";
+
+  const toggleBtn = document.createElement("button");
+  toggleBtn.type = "button";
+  toggleBtn.className = "task-steps-toggle";
+
+  const arrowEl = document.createElement("i");
+  arrowEl.className = "toggle-arrow";
+  arrowEl.textContent = "▶";
+  toggleBtn.appendChild(arrowEl);
+  toggleBtn.appendChild(document.createTextNode(" Steps"));
+
+  labelRow.appendChild(progressNumbers);
+  labelRow.appendChild(toggleBtn);
+
+  // ---- Collapsible steps section ----
+  const stepsSection = document.createElement("div");
+  stepsSection.className = "task-steps-section";
+
+  const stepsListEl = document.createElement("div");
+  stepsListEl.className = "steps-list";
+  stepsSection.appendChild(stepsListEl);
+
+  // Toggle expand/collapse
+  toggleBtn.addEventListener("click", () => {
+    const isOpen = stepsSection.classList.toggle("expanded");
+    toggleBtn.classList.toggle("open", isOpen);
+    const arrow = toggleBtn.querySelector(".toggle-arrow");
+    if (arrow) arrow.style.transform = isOpen ? "rotate(90deg)" : "";
+  });
+
+  wrapper.appendChild(barWrap);
+  wrapper.appendChild(labelRow);
+  wrapper.appendChild(stepsSection);
+
+  // ---- Add step button sits OUTSIDE the collapsible section (always visible) ----
+  if (editable) {
+    const addStepBtn = document.createElement("button");
+    addStepBtn.type = "button";
+    addStepBtn.className = "add-step-btn";
+    addStepBtn.textContent = "+ Add step";
+    addStepBtn.addEventListener("click", () => {
+      if (!Array.isArray(task.steps)) task.steps = [];
+      const newStep = { id: generateId(), text: "", completed: false };
+      task.steps.push(newStep);
+      saveNoteObject(note);
+      renderStepRow(newStep, task, note, stepsListEl, wrapper, true);
+      // auto-expand when a step is added
+      if (!stepsSection.classList.contains("expanded")) {
+        stepsSection.classList.add("expanded");
+        toggleBtn.classList.add("open");
+        const arrow = toggleBtn.querySelector(".toggle-arrow");
+        if (arrow) arrow.style.transform = "rotate(90deg)";
+      }
+      refreshProgressUI(task, wrapper);
+      // focus the new step
+      const rows = stepsListEl.querySelectorAll(".step-row");
+      const lastRow = rows[rows.length - 1];
+      if (lastRow) {
+        const txt = lastRow.querySelector(".step-text");
+        if (txt) txt.focus();
+      }
+    });
+    wrapper.appendChild(addStepBtn);
+  }
+
+  // Render existing steps
+  if (Array.isArray(task.steps)) {
+    task.steps.forEach((step) => {
+      renderStepRow(step, task, note, stepsListEl, wrapper, editable);
+    });
+  }
+
+  // Initial progress state
+  refreshProgressUI(task, wrapper);
+
+  return wrapper;
+}
+
+/* =====================================================
+   TASK ROW
 ===================================================== */
 function renderTaskRow(task, note, container, editable) {
   const row = document.createElement("div");
   row.className = "task-row";
-
   row.setAttribute("draggable", "false");
-
   row.dataset.taskId = task.id;
   row.dataset.noteId = note.id;
-
   row.classList.toggle("row-completed", !!task.completed);
+
+  // ---- Main top line ----
+  const main = document.createElement("div");
+  main.className = "task-row-main";
 
   // LEFT
   const left = document.createElement("div");
@@ -909,32 +1056,20 @@ function renderTaskRow(task, note, container, editable) {
   repeatSelect.className = "task-repeat-select";
   buildRepeatOptions(repeatSelect);
 
-  // restore values
   if (task.day) dateSelect.value = String(task.day);
-  if (task.month !== undefined && task.month !== "")
-    monthSelect.value = String(task.month);
+  if (task.month !== undefined && task.month !== "") monthSelect.value = String(task.month);
   repeatSelect.value = task.repeat || "none";
 
   const dueLabel = document.createElement("span");
   dueLabel.className = "task-due";
 
-  const urgencyClasses = [
-    "task-none",
-    "task-ok",
-    "task-warning",
-    "task-critical",
-    "task-overdue",
-  ];
+  const urgencyClasses = ["task-none","task-ok","task-warning","task-critical","task-overdue"];
 
   function applyUrgencyAndLabel() {
     urgencyClasses.forEach((cls) => row.classList.remove(cls));
-
-    const monthIndex =
-      task.month === "" || task.month === undefined ? "" : Number(task.month);
-
+    const monthIndex = task.month === "" || task.month === undefined ? "" : Number(task.month);
     const cls = getTaskUrgencyClass(task.day, monthIndex);
     row.classList.add(cls);
-
     dueLabel.textContent = formatTaskDueLabel(task.day, monthIndex);
   }
 
@@ -944,12 +1079,10 @@ function renderTaskRow(task, note, container, editable) {
       pill.textContent = `${repeatLabel(task.repeat || "none")}`;
       return;
     }
-
     const monthIdx = Number(task.month);
     const monthText = monthSelect.options[monthIdx + 1]
       ? monthSelect.options[monthIdx + 1].textContent
       : monthSelect.options[monthSelect.selectedIndex]?.textContent || "";
-
     pill.textContent = `${task.day} ${monthText} · ${repeatLabel(task.repeat || "none")}`;
   }
 
@@ -957,13 +1090,11 @@ function renderTaskRow(task, note, container, editable) {
     task.day = dateSelect.value || "";
     task.month = monthSelect.value === "" ? "" : Number(monthSelect.value);
     task.repeat = repeatSelect.value || "none";
-
     updatePillText();
     applyUrgencyAndLabel();
     saveNoteObject(note);
   }
 
-  // init UI
   updatePillText();
   applyUrgencyAndLabel();
 
@@ -1002,14 +1133,11 @@ function renderTaskRow(task, note, container, editable) {
   right.appendChild(timeWrapper);
   right.appendChild(dueLabel);
 
-  // checkbox + text saving
   if (editable) {
     checkbox.addEventListener("change", () => {
       task.completed = checkbox.checked;
       text.classList.toggle("done", task.completed);
-
       row.classList.toggle("row-completed", task.completed);
-
       saveNoteObject(note);
     });
 
@@ -1037,16 +1165,22 @@ function renderTaskRow(task, note, container, editable) {
     });
   }
 
-  row.appendChild(left);
-  row.appendChild(right);
-  row.appendChild(deleteBtn);
+  main.appendChild(left);
+  main.appendChild(right);
+  main.appendChild(deleteBtn);
+
+  row.appendChild(main);
+
+  // ---- Steps sub-section (below main line) ----
+  if (!Array.isArray(task.steps)) task.steps = [];
+  const stepsWrapper = buildStepsSubSection(task, note, editable);
+  row.appendChild(stepsWrapper);
+
   container.appendChild(row);
 }
 
 /* =====================================================
    CARD CREATION FROM NOTE OBJECT
-   - Renders sessions with Repeat selector
-   - Renders tasks with Repeat selector
 ===================================================== */
 function createCourseCardFromNote(note) {
   if (!notesGrid) return;
@@ -1057,7 +1191,6 @@ function createCourseCardFromNote(note) {
   card.className = "course-note";
   card.dataset.id = note.id;
 
-  // Delete / trash
   const deleteBtn = document.createElement("button");
   deleteBtn.type = "button";
   deleteBtn.className = "course-note-delete";
@@ -1078,8 +1211,7 @@ function createCourseCardFromNote(note) {
   header.textContent = note.courseName;
   card.appendChild(header);
 
-  // Restore in Trash view
-  if (currentView === 'trash' || currentView === 'archive') {
+  if (currentView === "trash" || currentView === "archive") {
     const restoreBtn = document.createElement("button");
     restoreBtn.type = "button";
     restoreBtn.className = "course-note-restore";
@@ -1091,13 +1223,8 @@ function createCourseCardFromNote(note) {
   body.className = "course-note-body";
   card.appendChild(body);
 
-  const titles = {
-    lectures: "Lectures",
-    tutorials: "Tutorials",
-    seminars: "Seminars",
-  };
+  const titles = { lectures: "Lectures", tutorials: "Tutorials", seminars: "Seminars" };
 
-  // Ensure sessionTimes exists + back-compat conversion
   if (!note.sessionTimes) note.sessionTimes = {};
 
   note.sections.forEach((key) => {
@@ -1112,33 +1239,16 @@ function createCourseCardFromNote(note) {
     sessionsContainer.className = "session-list";
     sectionDiv.appendChild(sessionsContainer);
 
-    // Back-compat: if no sessionTimes for this section, create from old note.schedule
     if (!Array.isArray(note.sessionTimes[key])) {
       const sched = (note.schedule && note.schedule[key]) || {};
-      note.sessionTimes[key] = [
-        {
-          id: generateId(),
-          day: sched.day || "",
-          time: sched.time || "",
-          repeat: "none",
-        },
-      ];
+      note.sessionTimes[key] = [{ id: generateId(), day: sched.day || "", time: sched.time || "", repeat: "none" }];
       saveNoteObject(note);
     }
 
-    // Render all session times
     note.sessionTimes[key].forEach((sessionObj) => {
-      addSessionRow(
-        sessionsContainer,
-        titles[key],
-        note,
-        key,
-        sessionObj,
-        editableCard,
-      );
+      addSessionRow(sessionsContainer, titles[key], note, key, sessionObj, editableCard);
     });
 
-    // Add another time
     const addBtn = document.createElement("button");
     addBtn.type = "button";
     addBtn.className = "add-session-btn";
@@ -1148,23 +1258,10 @@ function createCourseCardFromNote(note) {
     if (editableCard) {
       addBtn.addEventListener("click", () => {
         if (!Array.isArray(note.sessionTimes[key])) note.sessionTimes[key] = [];
-        const newSession = {
-          id: generateId(),
-          day: "",
-          time: "",
-          repeat: "none",
-        };
+        const newSession = { id: generateId(), day: "", time: "", repeat: "none" };
         note.sessionTimes[key].push(newSession);
         saveNoteObject(note);
-
-        addSessionRow(
-          sessionsContainer,
-          titles[key],
-          note,
-          key,
-          newSession,
-          true,
-        );
+        addSessionRow(sessionsContainer, titles[key], note, key, newSession, true);
       });
     }
 
@@ -1172,9 +1269,7 @@ function createCourseCardFromNote(note) {
     body.appendChild(sectionDiv);
   });
 
-  // =======================
-  // TASKS SECTION
-  // =======================
+  // Tasks section
   const tasksSection = document.createElement("div");
   tasksSection.className = "course-tasks";
 
@@ -1197,16 +1292,7 @@ function createCourseCardFromNote(note) {
 
     addTaskBtn.addEventListener("click", () => {
       if (!Array.isArray(note.tasks)) note.tasks = [];
-
-      const task = {
-        id: generateId(),
-        text: "",
-        day: "",
-        month: "",
-        repeat: "none",
-        completed: false,
-      };
-
+      const task = { id: generateId(), text: "", day: "", month: "", repeat: "none", completed: false, steps: [] };
       note.tasks.push(task);
       saveNoteObject(note);
       renderTaskRow(task, note, tasksList, true);
@@ -1217,16 +1303,15 @@ function createCourseCardFromNote(note) {
   tasksSection.appendChild(tasksList);
   body.appendChild(tasksSection);
 
-  // render existing tasks
   const tasks = Array.isArray(note.tasks) ? note.tasks : [];
   tasks.forEach((task) => {
-    if (task.repeat === undefined) task.repeat = "none"; // back-compat
+    if (task.repeat === undefined) task.repeat = "none";
+    if (!Array.isArray(task.steps)) task.steps = [];
     renderTaskRow(task, note, tasksList, editableCard);
   });
 
   setupTaskHoldDragReorder(tasksList, note, editableCard);
 
-  // hooks
   attachDeleteHandler(card);
   attachRestoreHandler(card);
   attachArchiveHandler(card);
@@ -1239,10 +1324,8 @@ function createCourseCardFromNote(note) {
 ===================================================== */
 (function renderInitial() {
   if (!notesGrid) return;
-
   const allNotes = loadAllNotes();
   const viewNotes = allNotes.filter((n) => n.status === currentView);
-
   if (viewNotes.length === 0) {
     ensurePlaceholder();
   } else {
@@ -1252,20 +1335,7 @@ function createCourseCardFromNote(note) {
 })();
 
 function monthNameFromIndex(i) {
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   return months[i] || "";
 }
 
@@ -1277,36 +1347,22 @@ function updateTaskRowUI(task) {
   const text = row.querySelector(".task-text");
   if (checkbox) checkbox.checked = !!task.completed;
   if (text) text.classList.toggle("done", !!task.completed);
-
   row.classList.toggle("row-completed", !!task.completed);
 
-  const urgencyClasses = [
-    "task-none",
-    "task-ok",
-    "task-warning",
-    "task-critical",
-    "task-overdue",
-  ];
+  const urgencyClasses = ["task-none","task-ok","task-warning","task-critical","task-overdue"];
   urgencyClasses.forEach((cls) => row.classList.remove(cls));
 
-  const monthIndex =
-    task.month === "" || task.month === undefined ? "" : Number(task.month);
+  const monthIndex = task.month === "" || task.month === undefined ? "" : Number(task.month);
   const cls = getTaskUrgencyClass(task.day, monthIndex);
   row.classList.add(cls);
 
   const dueLabel = row.querySelector(".task-due");
-  if (dueLabel) {
-    dueLabel.textContent = formatTaskDueLabel(task.day, monthIndex);
-  }
+  if (dueLabel) dueLabel.textContent = formatTaskDueLabel(task.day, monthIndex);
 
   const pill = row.querySelector(".session-time-pill");
   if (pill) {
     const rep = task.repeat || "none";
-    const repLabel =
-      rep === "none"
-        ? "Does not repeat"
-        : rep.charAt(0).toUpperCase() + rep.slice(1);
-
+    const repLabel = rep === "none" ? "Does not repeat" : rep.charAt(0).toUpperCase() + rep.slice(1);
     if (task.day && task.month !== "" && task.month !== undefined) {
       pill.textContent = `${task.day} ${monthNameFromIndex(Number(task.month))} · ${repLabel}`;
     } else {
@@ -1322,11 +1378,9 @@ function runRepeatRolloverSweep() {
 
   for (const note of notes) {
     if (!Array.isArray(note.tasks)) continue;
-
     for (const task of note.tasks) {
       if (task.repeat === undefined) task.repeat = "none";
       if (task.completed === undefined) task.completed = false;
-
       const changed = rolloverRepeatingTaskIfDuePassed(task, now);
       if (changed) {
         changedAny = true;
@@ -1335,9 +1389,7 @@ function runRepeatRolloverSweep() {
     }
   }
 
-  if (changedAny) {
-    saveAllNotes(notes);
-  }
+  if (changedAny) saveAllNotes(notes);
 }
 
 runRepeatRolloverSweep();
@@ -1351,89 +1403,50 @@ function parseHHMM(timeStr) {
 }
 
 function weekdayIndex(dayStr) {
-  // UI uses Mon..Sun
   const map = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
   return map[dayStr] ?? null;
 }
 
-// next occurrence based on repeat/day/time
 function computeNextSessionResetAt(sessionObj, nowMs = Date.now()) {
-  if (!sessionObj || !sessionObj.repeat || sessionObj.repeat === "none")
-    return null;
+  if (!sessionObj || !sessionObj.repeat || sessionObj.repeat === "none") return null;
 
   const t = parseHHMM(sessionObj.time);
   const now = new Date(nowMs);
 
-  // DAILY: needs time
   if (sessionObj.repeat === "daily") {
     if (!t) return null;
-    const d = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      t.hh,
-      t.mm,
-      0,
-      0,
-    );
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), t.hh, t.mm, 0, 0);
     if (d.getTime() <= nowMs) d.setDate(d.getDate() + 1);
     return d.getTime();
   }
 
-  // WEEKLY: needs day + time
   if (sessionObj.repeat === "weekly") {
     const wd = weekdayIndex(sessionObj.day);
     if (wd === null || !t) return null;
-
-    const cur = now.getDay(); // Sun=0..Sat=6
+    const cur = now.getDay();
     let delta = (wd - cur + 7) % 7;
-
-    const d = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      t.hh,
-      t.mm,
-      0,
-      0,
-    );
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), t.hh, t.mm, 0, 0);
     d.setDate(d.getDate() + delta);
-
-    // if it's today but already passed, push to next week
     if (d.getTime() <= nowMs) d.setDate(d.getDate() + 7);
     return d.getTime();
   }
 
-  // MONTHLY/YEARLY: anchor off existing nextResetAt if possible, else fall back to daily/weekly computation
   let base = sessionObj.nextResetAt ? new Date(sessionObj.nextResetAt) : null;
-
   if (!base) {
-    // try to create a base from weekly if possible, else daily
-    const fallback =
-      sessionObj.day && sessionObj.time
-        ? computeNextSessionResetAt(
-            { ...sessionObj, repeat: "weekly", nextResetAt: null },
-            nowMs,
-          )
-        : computeNextSessionResetAt(
-            { ...sessionObj, repeat: "daily", nextResetAt: null },
-            nowMs,
-          );
-
+    const fallback = sessionObj.day && sessionObj.time
+      ? computeNextSessionResetAt({ ...sessionObj, repeat: "weekly", nextResetAt: null }, nowMs)
+      : computeNextSessionResetAt({ ...sessionObj, repeat: "daily", nextResetAt: null }, nowMs);
     if (!fallback) return null;
     base = new Date(fallback);
   }
 
-  // push forward until it's in the future
   let next = new Date(base);
-
   while (next.getTime() <= nowMs) {
     if (sessionObj.repeat === "monthly") next = addMonths(next, 1);
     else if (sessionObj.repeat === "yearly") next = addYears(next, 1);
     else break;
   }
 
-  // if still not in future, add one more
   if (next.getTime() <= nowMs) {
     if (sessionObj.repeat === "monthly") next = addMonths(next, 1);
     if (sessionObj.repeat === "yearly") next = addYears(next, 1);
@@ -1444,7 +1457,6 @@ function computeNextSessionResetAt(sessionObj, nowMs = Date.now()) {
 
 /* =====================================================
    FORM SUBMIT (NOTES PAGE ONLY)
-   - Creates sessionTimes with repeat='none'
 ===================================================== */
 if (currentView === "notes" && noteForm && courseNameInput) {
   noteForm.addEventListener("submit", (e) => {
@@ -1465,14 +1477,11 @@ if (currentView === "notes" && noteForm && courseNameInput) {
       return;
     }
 
-    // Keep old schedule (back-compat) + create new sessionTimes
     const scheduleBySection = {};
     const sessionTimes = {};
 
     activeSections.forEach((name) => {
-      const row = document.querySelector(
-        `.section-row[data-section="${name}"]`,
-      );
+      const row = document.querySelector(`.section-row[data-section="${name}"]`);
       if (!row) return;
 
       const daySel = row.querySelector(".day-select");
@@ -1484,27 +1493,16 @@ if (currentView === "notes" && noteForm && courseNameInput) {
       let time = "";
       if (hh && mm) time = `${hh}:${mm}`;
 
-      scheduleBySection[name] = {
-        day: daySel ? daySel.value : "",
-        time,
-      };
-
-      sessionTimes[name] = [
-        {
-          id: generateId(),
-          day: daySel ? daySel.value : "",
-          time,
-          repeat: "none",
-        },
-      ];
+      scheduleBySection[name] = { day: daySel ? daySel.value : "", time };
+      sessionTimes[name] = [{ id: generateId(), day: daySel ? daySel.value : "", time, repeat: "none" }];
     });
 
     const note = {
       id: generateId(),
       courseName,
       sections: activeSections,
-      schedule: scheduleBySection, // old
-      sessionTimes, // new
+      schedule: scheduleBySection,
+      sessionTimes,
       tasks: [],
       status: "notes",
     };
@@ -1517,17 +1515,12 @@ if (currentView === "notes" && noteForm && courseNameInput) {
 }
 
 function updateSessionRowUI(sessionObj) {
-  const row = document.querySelector(
-    `.session-row[data-session-id="${sessionObj.id}"]`,
-  );
+  const row = document.querySelector(`.session-row[data-session-id="${sessionObj.id}"]`);
   if (!row) return;
-
   const checkbox = row.querySelector('input[type="checkbox"]');
   const text = row.querySelector(".todo-text");
-
   if (checkbox) checkbox.checked = !!sessionObj.completed;
   if (text) text.classList.toggle("done", !!sessionObj.completed);
-
   row.classList.toggle("row-completed", !!sessionObj.completed);
 }
 
@@ -1538,30 +1531,21 @@ function runSessionRepeatRolloverSweep() {
 
   for (const note of notes) {
     if (!note.sessionTimes) continue;
-
     for (const sectionKey of Object.keys(note.sessionTimes)) {
       const arr = note.sessionTimes[sectionKey];
       if (!Array.isArray(arr)) continue;
-
       for (const sessionObj of arr) {
         if (!sessionObj.repeat || sessionObj.repeat === "none") continue;
-
-        // if missing nextResetAt, create it
         if (!sessionObj.nextResetAt) {
           sessionObj.nextResetAt = computeNextSessionResetAt(sessionObj, now);
           if (sessionObj.nextResetAt) changedAny = true;
           continue;
         }
-
-        // If reset time has passed → auto reset completion + schedule next
         if (sessionObj.nextResetAt && now >= sessionObj.nextResetAt) {
           sessionObj.completed = false;
-
-          // compute next reset (and ensure it’s in the future)
           sessionObj.nextResetAt = computeNextSessionResetAt(sessionObj, now);
-
           changedAny = true;
-          updateSessionRowUI(sessionObj); // live update if visible
+          updateSessionRowUI(sessionObj);
         }
       }
     }

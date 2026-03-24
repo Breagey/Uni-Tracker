@@ -837,3 +837,193 @@ h2 {
     display: none;
   }
 }
+
+/* =====================================================
+   TASK STEPS / PROGRESS
+===================================================== */
+
+/* Make task-row a wrapping flex column so steps can live below */
+.task-row {
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+/* The top line of a task (checkbox, text, deadline, delete) */
+.task-row-main {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 6px;
+}
+
+/* Steps wrapper sits below .task-row-main */
+.task-steps-wrapper {
+  width: 100%;
+  padding: 2px 8px 4px 8px;
+}
+
+/* Progress bar track */
+.task-progress-bar-wrap {
+  height: 5px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 5px 0 2px;
+}
+
+/* Progress bar fill */
+.task-progress-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.task-progress-bar-fill.all-done {
+  background: #22c55e;
+}
+
+/* "X / Y steps" label */
+.task-progress-label {
+  font-size: 0.68rem;
+  color: #9ca3af;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Toggle button to show/hide steps */
+.task-steps-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #f9fafb;
+  padding: 2px 9px;
+  cursor: pointer;
+  color: #4b5563;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  user-select: none;
+}
+
+.task-steps-toggle:hover {
+  background: #eff6ff;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.task-steps-toggle .toggle-arrow {
+  display: inline-block;
+  font-style: normal;
+  transition: transform 0.2s ease;
+  font-size: 0.6rem;
+}
+
+.task-steps-toggle.open .toggle-arrow {
+  transform: rotate(90deg);
+}
+
+/* Collapsible steps list */
+.task-steps-section {
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+  padding-left: 4px;
+  border-left: 2px solid #e5e7eb;
+}
+
+.task-steps-section.expanded {
+  display: flex;
+}
+
+/* Individual step row */
+.step-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 4px;
+  border-radius: 6px;
+}
+
+.step-row input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+  accent-color: var(--accent);
+}
+
+.step-text {
+  flex: 1;
+  font-size: 0.78rem;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  padding: 2px 5px;
+  outline: none;
+  color: var(--ink);
+  background: transparent;
+  min-width: 0;
+}
+
+.step-text[contenteditable="true"]:empty:before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.step-text[contenteditable="true"]:hover {
+  border-color: var(--border);
+  background: #fafafa;
+}
+
+.step-text[contenteditable="true"]:focus {
+  border-color: var(--accent);
+  background: #eff6ff;
+}
+
+.step-text.done {
+  text-decoration: line-through;
+  color: #9ca3af;
+}
+
+/* Step delete button */
+.step-delete-btn {
+  border: none;
+  background: transparent;
+  color: #d1d5db;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+  flex-shrink: 0;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.step-delete-btn:hover {
+  color: #ef4444;
+}
+
+/* Add step button */
+.add-step-btn {
+  font-size: 0.7rem;
+  border-radius: 999px;
+  border: 1px dashed var(--border);
+  background: transparent;
+  padding: 2px 9px;
+  cursor: pointer;
+  color: #6b7280;
+  align-self: flex-start;
+  margin-top: 3px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.add-step-btn:hover {
+  background: #eff6ff;
+  border-color: var(--accent);
+  color: var(--accent);
+}
