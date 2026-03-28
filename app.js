@@ -640,6 +640,24 @@ function attachArchiveHandler(card) {
   });
 }
 
+const deleteAllBtn = document.getElementById("delete-all-trash");
+
+if (currentView === "trash" && deleteAllBtn) {
+  deleteAllBtn.addEventListener("click", () => {
+    const confirmDelete = confirm("Delete ALL notes permanently?");
+    if (!confirmDelete) return;
+
+    let notes = loadAllNotes();
+
+    notes = notes.filter((n) => n.status !== "trash");
+
+    saveAllNotes(notes);
+
+    notesGrid.innerHTML = "";
+    ensurePlaceholder();
+  });
+}
+
 /* =====================================================
    TASK HELPERS (DEADLINES + LABELS)
 ===================================================== */
